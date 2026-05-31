@@ -145,6 +145,9 @@ class _PropertyDetailsContentState extends State<_PropertyDetailsContent> {
           price: provider.selectedPrice,
           selections: provider.selectedUnitKeys.toList(),
           isWhole: provider.isWholeApartment,
+          bedCount: provider.property.bookingMode == 'bed'
+              ? provider.selectedBedCount
+              : null,
         ),
       ),
     );
@@ -310,119 +313,127 @@ class _PropertyDetailsContentState extends State<_PropertyDetailsContent> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          CustomScrollView(
-            slivers: [
-              PropertyGallery(
-                property: property,
-                onBack: () => Navigator.pop(context),
-              ),
-              SliverToBoxAdapter(
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    // White Body Container
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(30),
-                          topRight: Radius.circular(30),
-                        ),
-                      ),
-                      transform: Matrix4.translationValues(0, -20, 0),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 45, 20, 100),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            PropertyHeader(
-                              property: property,
-                              isFavorite: isFavorite,
-                              onToggleFavorite: () {
-                                if (GuestChecker.check(context)) {
-                                  favoritesProvider.toggleFavorite(property);
-                                }
-                              },
-                            ),
-                            PropertyFeatures(
-                              tags: property.localizedAmenities(context),
-                            ),
-                            PropertyVideo(videoUrl: property.videoUrl),
-                            const PropertyOwner(), // Internal logic via Provider
-                            // ⬇️ Ad Space (Custom or Google Native)
-                            AdService().getAdWidget(
-                              factoryId: 'listTileSmall',
-                              height: 100, // Compact height for detail page
-                            ),
-                            const SizedBox(height: 20),
-
-                            PropertyBooking(
-                              unitSelectionKey: _unitSelectionKey,
-                              property: property,
-                              selectedBedCount:
-                                  detailsProvider.selectedBedCount,
-                              onBedCountChanged: (count) {
-                                detailsProvider.setBedCount(count, context);
-                              },
-                              isWholeApartment:
-                                  detailsProvider.isWholeApartment,
-                              selectedUnitKeys:
-                                  detailsProvider.selectedUnitKeys,
-                              showSelectionError: _showSelectionError,
-                              onUnitSelectionChanged: (isWhole, key) {
-                                setState(() {
-                                  _showSelectionError = false;
-                                });
-                                detailsProvider.toggleUnitSelection(
-                                  isWhole,
-                                  key,
-                                  context,
-                                );
-                              },
-                            ),
-                            PropertyDescription(
-                              description: property.localizedDescription(
-                                context,
-                              ), // Use localized
-                            ),
-                            const SizedBox(height: 20),
-
-                            // Student Section (Gender)
-                            if (property.gender != null &&
-                                property.gender!.isNotEmpty) ...[
-                              _buildStudentSection(context, property.gender),
-                              const SizedBox(height: 20),
-                            ],
-                            const SizedBox(height: 20),
-
-                            // Nearby Universities Section
-                            if (property.universities.isNotEmpty) ...[
-                              _buildNearbySection(
-                                context,
-                                context.loc.nearbyUniversities,
-                                property.localizedUniversities(context),
-                                Icons.school_outlined,
-                              ),
-                              const SizedBox(height: 20),
-                            ],
-
-                            // Nearby Places Section
-                            if (property.nearbyPlaces.isNotEmpty) ...[
-                              _buildNearbySection(
-                                context,
-                                context.loc.nearbyPlaces,
-                                property.localizedNearbyPlaces(context),
-                                Icons.place_outlined,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+          RefreshIndicator(
+            color: const Color(0xFF008695),
+            onRefresh: () async {
+              await context.read<PropertyDetailsProvider>().refreshProperty();
+            },
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                PropertyGallery(
+                  property: property,
+                  onBack: () => Navigator.pop(context),
                 ),
-              ),
-            ],
+                SliverToBoxAdapter(
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // White Body Container
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(30),
+                            topRight: Radius.circular(30),
+                          ),
+                        ),
+                        transform: Matrix4.translationValues(0, -20, 0),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 45, 20, 100),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              PropertyHeader(
+                                property: property,
+                                isFavorite: isFavorite,
+                                onToggleFavorite: () {
+                                  if (GuestChecker.check(context)) {
+                                    favoritesProvider.toggleFavorite(property);
+                                  }
+                                },
+                              ),
+                              PropertyFeatures(
+                                tags: property.localizedAmenities(context),
+                                isHotelApartment: property.isHotelApartment,
+                              ),
+                              PropertyVideo(videoUrl: property.videoUrl),
+                              const PropertyOwner(), // Internal logic via Provider
+                              // ⬇️ Ad Space (Custom or Google Native)
+                              AdService().getAdWidget(
+                                factoryId: 'listTileSmall',
+                                height: 100, // Compact height for detail page
+                              ),
+                              const SizedBox(height: 20),
+
+                              PropertyBooking(
+                                unitSelectionKey: _unitSelectionKey,
+                                property: property,
+                                selectedBedCount:
+                                    detailsProvider.selectedBedCount,
+                                onBedCountChanged: (count) {
+                                  detailsProvider.setBedCount(count, context);
+                                },
+                                isWholeApartment:
+                                    detailsProvider.isWholeApartment,
+                                selectedUnitKeys:
+                                    detailsProvider.selectedUnitKeys,
+                                showSelectionError: _showSelectionError,
+                                onUnitSelectionChanged: (isWhole, key) {
+                                  setState(() {
+                                    _showSelectionError = false;
+                                  });
+                                  detailsProvider.toggleUnitSelection(
+                                    isWhole,
+                                    key,
+                                    context,
+                                  );
+                                },
+                              ),
+                              PropertyDescription(
+                                description: property.localizedDescription(
+                                  context,
+                                ), // Use localized
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Student Section (Gender)
+                              if (property.gender != null &&
+                                  property.gender!.isNotEmpty) ...[
+                                _buildStudentSection(context, property.gender),
+                                const SizedBox(height: 20),
+                              ],
+                              const SizedBox(height: 20),
+
+                              // Nearby Universities Section
+                              if (property.universities.isNotEmpty) ...[
+                                _buildNearbySection(
+                                  context,
+                                  context.loc.nearbyUniversities,
+                                  property.localizedUniversities(context),
+                                  Icons.school_outlined,
+                                ),
+                                const SizedBox(height: 20),
+                              ],
+
+                              // Nearby Places Section
+                              if (property.nearbyPlaces.isNotEmpty) ...[
+                                _buildNearbySection(
+                                  context,
+                                  context.loc.nearbyPlaces,
+                                  property.localizedNearbyPlaces(context),
+                                  Icons.place_outlined,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
           PropertyActions(
             property: property,

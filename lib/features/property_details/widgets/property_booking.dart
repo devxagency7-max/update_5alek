@@ -94,7 +94,9 @@ class PropertyBooking extends StatelessWidget {
                   ),
                 ],
           border: Border.all(
-            color: const Color(0xFF39BB5E).withValues(alpha: 0.3),
+            color: property.isHotelApartment
+                ? const Color(0xFFDFBA6B).withValues(alpha: 0.3)
+                : const Color(0xFF39BB5E).withValues(alpha: 0.3),
           ),
         ),
         child: Column(
@@ -105,10 +107,12 @@ class PropertyBooking extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF39BB5E).withValues(alpha: 0.1),
+                    color: property.isHotelApartment
+                        ? const Color(0xFFDFBA6B).withValues(alpha: 0.1)
+                        : const Color(0xFF39BB5E).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.bed, color: Color(0xFF39BB5E)),
+                  child: Icon(Icons.bed, color: property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF39BB5E)),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -183,7 +187,7 @@ class PropertyBooking extends StatelessWidget {
                             style: GoogleFonts.cairo(
                               fontSize: 24,
                               fontWeight: FontWeight.w900,
-                              color: const Color(0xFF008695),
+                              color: property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
                             ),
                           ),
                         ),
@@ -213,7 +217,7 @@ class PropertyBooking extends StatelessWidget {
                         valueColor: AlwaysStoppedAnimation<Color>(
                           property.totalBeds - selectedBedCount < 2
                               ? Colors.orange
-                              : const Color(0xFF39BB5E),
+                              : (property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF39BB5E)),
                         ),
                         minHeight: 6,
                       ),
@@ -254,10 +258,14 @@ class PropertyBooking extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 25),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFF008695).withValues(alpha: 0.08),
+          color: property.isHotelApartment
+              ? const Color(0xFFDFBA6B).withValues(alpha: 0.08)
+              : const Color(0xFF008695).withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(15),
           border: Border.all(
-            color: const Color(0xFF008695).withValues(alpha: 0.3),
+            color: property.isHotelApartment
+                ? const Color(0xFFDFBA6B).withValues(alpha: 0.3)
+                : const Color(0xFF008695).withValues(alpha: 0.3),
           ),
         ),
         child: Column(
@@ -267,12 +275,14 @@ class PropertyBooking extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF008695).withValues(alpha: 0.1),
+                    color: property.isHotelApartment
+                        ? const Color(0xFFDFBA6B).withValues(alpha: 0.1)
+                        : const Color(0xFF008695).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.home_work_rounded,
-                    color: Color(0xFF008695),
+                    color: property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
                     size: 28,
                   ),
                 ),
@@ -286,7 +296,7 @@ class PropertyBooking extends StatelessWidget {
                         style: GoogleFonts.cairo(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF008695),
+                          color: property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
                         ),
                       ),
                       Text(
@@ -371,7 +381,9 @@ class PropertyBooking extends StatelessWidget {
                             : Colors.white,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: const Color(0xFF008695).withValues(alpha: 0.1),
+                          color: property.isHotelApartment
+                              ? const Color(0xFFDFBA6B).withValues(alpha: 0.1)
+                              : const Color(0xFF008695).withValues(alpha: 0.1),
                         ),
                       ),
                       child: Row(
@@ -380,8 +392,8 @@ class PropertyBooking extends StatelessWidget {
                           Container(
                             width: 6,
                             height: 6,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF008695),
+                            decoration: BoxDecoration(
+                              color: property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -391,7 +403,7 @@ class PropertyBooking extends StatelessWidget {
                             style: GoogleFonts.cairo(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF008695),
+                              color: property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
                             ),
                           ),
                         ],
@@ -436,13 +448,17 @@ class PropertyBooking extends StatelessWidget {
         border: Border.all(
           color: onPressed == null
               ? Colors.grey.shade200
-              : const Color(0xFF008695).withValues(alpha: 0.5),
+              : (property.isHotelApartment
+                  ? const Color(0xFFDFBA6B).withValues(alpha: 0.5)
+                  : const Color(0xFF008695).withValues(alpha: 0.5)),
         ),
         boxShadow: onPressed == null
             ? []
             : [
                 BoxShadow(
-                  color: const Color(0xFF008695).withValues(alpha: 0.1),
+                  color: property.isHotelApartment
+                      ? const Color(0xFFDFBA6B).withValues(alpha: 0.1)
+                      : const Color(0xFF008695).withValues(alpha: 0.1),
                   blurRadius: 5,
                   offset: const Offset(0, 2),
                 ),
@@ -451,7 +467,9 @@ class PropertyBooking extends StatelessWidget {
       child: IconButton(
         icon: Icon(
           icon,
-          color: onPressed == null ? Colors.grey : const Color(0xFF008695),
+          color: onPressed == null
+              ? Colors.grey
+              : (property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695)),
         ),
         onPressed: onPressed,
       ),
@@ -480,7 +498,7 @@ class PropertyBooking extends StatelessWidget {
             style: GoogleFonts.cairo(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF008695),
+              color: property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
             ),
           ),
           Text(
@@ -565,9 +583,13 @@ class UnitSelectionWidget extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 15),
             decoration: BoxDecoration(
               gradient: isWholeApartment
-                  ? const LinearGradient(
-                      colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-                    )
+                  ? (property.isHotelApartment
+                      ? const LinearGradient(
+                          colors: [Color(0xFFDFBA6B), Color(0xFF9E7D3B)],
+                        )
+                      : const LinearGradient(
+                          colors: [Color(0xFF39BB5E), Color(0xFF008695)],
+                        ))
                   : null,
               color: isWholeApartment
                   ? null
@@ -584,7 +606,9 @@ class UnitSelectionWidget extends StatelessWidget {
               boxShadow: isWholeApartment
                   ? [
                       BoxShadow(
-                        color: const Color(0xFF008695).withValues(alpha: 0.3),
+                        color: property.isHotelApartment
+                            ? const Color(0xFF9E7D3B).withOpacity(0.3)
+                            : const Color(0xFF008695).withOpacity(0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -600,7 +624,7 @@ class UnitSelectionWidget extends StatelessWidget {
                       : context.loc.bookApartmentFull,
                   style: GoogleFonts.cairo(
                     color: isWholeApartment
-                        ? Colors.white
+                        ? (property.isHotelApartment ? Colors.black : Colors.white)
                         : (property.bookedUnits.isNotEmpty
                               ? Theme.of(context).disabledColor
                               : Theme.of(context).textTheme.bodyMedium?.color),
@@ -609,7 +633,7 @@ class UnitSelectionWidget extends StatelessWidget {
                   ),
                 ),
                 if (isWholeApartment)
-                  const Icon(Icons.check_circle, color: Colors.white, size: 22)
+                  Icon(Icons.check_circle, color: property.isHotelApartment ? Colors.black : Colors.white, size: 22)
                 else if (property.bookedUnits.isNotEmpty)
                   Icon(
                     Icons.block,
@@ -823,12 +847,18 @@ class UnitSelectionWidget extends StatelessWidget {
               duration: const Duration(milliseconds: 300),
               opacity: isSelected ? 1.0 : 0.0,
               child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                decoration: BoxDecoration(
+                  gradient: property.isHotelApartment
+                      ? const LinearGradient(
+                          colors: [Color(0xFFDFBA6B), Color(0xFF9E7D3B)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : const LinearGradient(
+                          colors: [Color(0xFF39BB5E), Color(0xFF008695)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                 ),
               ),
             ),
@@ -847,7 +877,9 @@ class UnitSelectionWidget extends StatelessWidget {
                 else
                   Icon(
                     isSelected ? Icons.check_circle : Icons.add_circle_outline,
-                    color: isSelected ? Colors.white : Colors.grey.shade400,
+                    color: isSelected
+                        ? (property.isHotelApartment ? Colors.black : Colors.white)
+                        : Colors.grey.shade400,
                     size: isSmall ? 18 : 22,
                   ),
                 const SizedBox(height: 4),
@@ -858,7 +890,9 @@ class UnitSelectionWidget extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     color: isDisabled
                         ? Theme.of(context).disabledColor
-                        : (isSelected ? Colors.white : Colors.grey.shade600),
+                        : (isSelected
+                            ? (property.isHotelApartment ? Colors.black : Colors.white)
+                            : Colors.grey.shade600),
                   ),
                 ),
               ],

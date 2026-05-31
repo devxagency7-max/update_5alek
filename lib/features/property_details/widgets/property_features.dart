@@ -5,8 +5,13 @@ import 'package:motareb/core/extensions/loc_extension.dart';
 
 class PropertyFeatures extends StatefulWidget {
   final List<String> tags;
+  final bool isHotelApartment;
 
-  const PropertyFeatures({super.key, required this.tags});
+  const PropertyFeatures({
+    super.key,
+    required this.tags,
+    this.isHotelApartment = false,
+  });
 
   @override
   State<PropertyFeatures> createState() => _PropertyFeaturesState();
@@ -110,8 +115,8 @@ class _PropertyFeaturesState extends State<PropertyFeatures> {
                         context,
                         icon,
                         tag,
-                        const Color(0xFF008695),
-                        const Color(0xFF008695),
+                        widget.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
+                        widget.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
                       ),
                     );
                   }).toList(),
@@ -138,10 +143,10 @@ class _PropertyFeaturesState extends State<PropertyFeatures> {
                             ],
                           ),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_forward_ios_rounded,
                           size: 16,
-                          color: Color(0xFF008695),
+                          color: widget.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
                         ),
                       ),
                     ),

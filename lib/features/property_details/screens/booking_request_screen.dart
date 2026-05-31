@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:motareb/core/services/remote_config_helper.dart';
+
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:motareb/core/extensions/loc_extension.dart';
 import '../../../../core/models/property_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/booking_request_provider.dart';
 import 'payment_webview_screen.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import '../../../core/services/r2_upload_service.dart';
+import '../../home/screens/privacy_policy_screen.dart';
 
 class BookingRequestScreen extends StatelessWidget {
   final Property property;
@@ -18,6 +19,7 @@ class BookingRequestScreen extends StatelessWidget {
   final double price;
   final List<String> selections;
   final bool isWhole;
+  final int? bedCount;
 
   const BookingRequestScreen({
     super.key,
@@ -26,6 +28,7 @@ class BookingRequestScreen extends StatelessWidget {
     required this.price,
     required this.selections,
     required this.isWhole,
+    this.bedCount,
   });
 
   @override
@@ -37,6 +40,7 @@ class BookingRequestScreen extends StatelessWidget {
         price: price,
         selections: selections,
         isWhole: isWhole,
+        bedCount: bedCount,
       ),
       child: const _BookingRequestContent(),
     );
@@ -52,7 +56,6 @@ class _BookingRequestContent extends StatefulWidget {
 
 class _BookingRequestContentState extends State<_BookingRequestContent> {
   final _formKey = GlobalKey<FormState>();
-  bool _showDateError = false;
 
   // Controllers
   late TextEditingController _nameController;
@@ -60,19 +63,113 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
   late TextEditingController _emailController;
   final TextEditingController _notesController = TextEditingController();
 
-  // ID Images State
-  File? _idFrontImage;
-  File? _idBackImage;
-  String? _idFrontUrl;
-  String? _idBackUrl;
-  bool _isUploadingImages = false;
-
   // Payment Selection
   String _paymentMethod = 'card'; // 'card' or 'wallet'
   final TextEditingController _walletNumberController = TextEditingController();
 
-  final ImagePicker _picker = ImagePicker();
-  final R2UploadService _uploadService = R2UploadService();
+  // Coupon State
+  final TextEditingController _couponController = TextEditingController();
+  bool _isValidatingCoupon = false;
+  String? _couponError;
+  String? _appliedCouponCode;
+  double _discountAmount = 0.0;
+  String? _couponDiscountType;
+  double? _couponDiscountValue;
+
+  Future<void> _validateCoupon() async {
+    final code = _couponController.text.trim().toUpperCase();
+    if (code.isEmpty) return;
+
+    setState(() {
+      _isValidatingCoupon = true;
+      _couponError = null;
+      _appliedCouponCode = null;
+      _discountAmount = 0.0;
+    });
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('coupons')
+          .doc(code)
+          .get();
+
+      if (!mounted) return;
+
+      if (!doc.exists) {
+        setState(() {
+          _couponError = "الكوبون غير موجود";
+          _isValidatingCoupon = false;
+        });
+        return;
+      }
+
+      final data = doc.data() as Map<String, dynamic>;
+      final usedCount = data['usedCount'] as int? ?? 0;
+      final usageLimit = data['usageLimit'] as int? ?? 999999;
+      final isActive = data['isActive'] ?? true;
+      final expiryDate = data['expiryDate'] as Timestamp?;
+      final isExpired = expiryDate != null && expiryDate.toDate().isBefore(DateTime.now());
+
+      if (!isActive) {
+        setState(() {
+          _couponError = "الكوبون غير نشط";
+          _isValidatingCoupon = false;
+        });
+        return;
+      }
+
+      if (isExpired) {
+        setState(() {
+          _couponError = "الكوبون منتهي الصلاحية";
+          _isValidatingCoupon = false;
+        });
+        return;
+      }
+
+      if (usedCount >= usageLimit) {
+        setState(() {
+          _couponError = "تم استخدام الكوبون للحد الأقصى";
+          _isValidatingCoupon = false;
+        });
+        return;
+      }
+
+      final provider = context.read<BookingRequestProvider>();
+      final commission = (provider.property.fixedCommission != null && provider.property.fixedCommission! > 0)
+          ? provider.property.fixedCommission!
+          : (provider.price / 2);
+
+      final discountType = data['discountType'] as String? ?? 'fixed';
+      final discountValue = (data['discountValue'] as num?)?.toDouble() ?? 0.0;
+
+      double discount = 0.0;
+      if (discountType == 'percentage') {
+        discount = commission * (discountValue / 100);
+      } else {
+        discount = discountValue;
+      }
+
+      if (discount > commission) {
+        discount = commission;
+      }
+
+      setState(() {
+        _appliedCouponCode = code;
+        _couponDiscountType = discountType;
+        _couponDiscountValue = discountValue;
+        _discountAmount = discount;
+        _couponError = null;
+        _isValidatingCoupon = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _couponError = "حدث خطأ أثناء التحقق من الكوبون";
+          _isValidatingCoupon = false;
+        });
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -93,45 +190,8 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
     _emailController.dispose();
     _walletNumberController.dispose();
     _notesController.dispose();
+    _couponController.dispose();
     super.dispose();
-  }
-
-  Future<void> _selectMonthYear(BuildContext context, bool isStart) async {
-    final provider = context.read<BookingRequestProvider>();
-    // If no date selected, default to current month/year
-    final initialDate = isStart
-        ? (provider.startDate ?? DateTime.now())
-        : (provider.endDate ?? provider.startDate ?? DateTime.now());
-
-    // Ensure initialDate is not before today (so we default to now if it is)
-    final DateTime now = DateTime.now();
-    final DateTime safeInitial =
-        initialDate.isBefore(DateTime(now.year, now.month)) ? now : initialDate;
-
-    await showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) => _MonthYearPickerSheet(
-        initialDate: safeInitial,
-        isStart: isStart,
-        onDateSelected: (selectedDate) {
-          if (isStart) {
-            provider.setStartDate(selectedDate);
-          } else {
-            // Validation
-            if (provider.startDate != null &&
-                selectedDate.isBefore(provider.startDate!)) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(context.loc.endDateError)));
-              return;
-            }
-            provider.setEndDate(selectedDate);
-          }
-        },
-      ),
-    );
   }
 
   @override
@@ -140,20 +200,29 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(25)),
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      behavior: HitTestBehavior.opaque,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(bottom: Radius.circular(25)),
-            gradient: LinearGradient(
-              colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+          ),
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(25)),
+            gradient: provider.property.isHotelApartment
+                ? const LinearGradient(
+                    colors: [Color(0xFFF3E5AB), Color(0xFFDFBA6B), Color(0xFF9E7D3B)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : const LinearGradient(
+                    colors: [Color(0xFF39BB5E), Color(0xFF008695)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
           ),
         ),
         title: Text(
@@ -161,14 +230,14 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
           style: GoogleFonts.cairo(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: provider.property.isHotelApartment ? Colors.black : Colors.white,
           ),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: provider.property.isHotelApartment ? Colors.black : Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -285,12 +354,59 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                                   color: Colors.grey,
                                 ),
                               ),
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: provider.property.isHotelApartment
+                                      ? const Color(0xFFDFBA6B).withValues(alpha: 0.1)
+                                      : Colors.grey.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: provider.property.isHotelApartment
+                                        ? const Color(0xFFDFBA6B).withValues(alpha: 0.4)
+                                        : Colors.grey.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      provider.property.isHotelApartment
+                                          ? Icons.hotel
+                                          : Icons.home_outlined,
+                                      size: 13,
+                                      color: provider.property.isHotelApartment
+                                          ? const Color(0xFFDFBA6B)
+                                          : Colors.grey,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      provider.property.isHotelApartment
+                                          ? 'شقة فندقية ✨'
+                                          : 'شقة عادية',
+                                      style: GoogleFonts.cairo(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: provider.property.isHotelApartment
+                                            ? const Color(0xFFDFBA6B)
+                                            : Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                        const Icon(
+                        Icon(
                           Icons.location_on_outlined,
-                          color: Color(0xFF008695),
+                          color: provider.property.isHotelApartment
+                              ? const Color(0xFFDFBA6B)
+                              : const Color(0xFF008695),
                         ),
                       ],
                     ),
@@ -310,9 +426,11 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                           style: GoogleFonts.cairo(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: isDark
-                                ? Colors.white
-                                : const Color(0xFF008695),
+                            color: provider.property.isHotelApartment
+                                ? const Color(0xFFDFBA6B)
+                                : (isDark
+                                    ? Colors.white
+                                    : const Color(0xFF008695)),
                           ),
                         ),
                       ],
@@ -389,21 +507,26 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                     ),
                     const SizedBox(height: 10),
 
-                    TextFormField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      decoration: InputDecoration(
-                        labelText: context.loc.phone,
-                        labelStyle: GoogleFonts.cairo(fontSize: 13),
-                        prefixIcon: const Icon(Icons.phone_outlined),
-                        hintText: context.loc.examplePhoneNumber,
+                    if (RemoteConfigHelper.showPhoneField) ...[
+                      TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                        decoration: InputDecoration(
+                          labelText: context.loc.phone,
+                          labelStyle: GoogleFonts.cairo(fontSize: 13),
+                          prefixIcon: const Icon(Icons.phone_outlined),
+                          hintText: context.loc.examplePhoneNumber,
+                        ),
+                        validator: (value) {
+                          if (!RemoteConfigHelper.showPhoneField) return null;
+                          return (value == null || value.isEmpty)
+                              ? context.loc.required
+                              : null;
+                        },
                       ),
-                      validator: (value) => value == null || value.isEmpty
-                          ? context.loc.required
-                          : null,
-                    ),
-                    const SizedBox(height: 10),
+                      const SizedBox(height: 10),
+                    ],
 
                     TextFormField(
                       controller: _emailController,
@@ -426,7 +549,7 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
 
               const SizedBox(height: 20),
 
-              // Duration Card
+              // Coupon Code Card
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -446,7 +569,7 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      context.loc.stayDuration,
+                      "كوبون الخصم",
                       style: GoogleFonts.cairo(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -457,68 +580,83 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                     Row(
                       children: [
                         Expanded(
-                          child: InkWell(
-                            onTap: () => _selectMonthYear(context, true),
-                            child: _buildDateBox(
-                              context,
-                              context.loc.startDate,
-                              provider.startDate != null
-                                  ? DateFormat(
-                                      'MM/yyyy',
-                                      'en',
-                                    ).format(provider.startDate!)
-                                  : context.loc.selectStartMonth,
-                              isError:
-                                  _showDateError && provider.startDate == null,
+                          child: TextFormField(
+                            controller: _couponController,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                            decoration: InputDecoration(
+                              labelText: "أدخل كود الكوبون",
+                              labelStyle: GoogleFonts.cairo(fontSize: 13),
+                              prefixIcon: const Icon(Icons.local_offer_outlined),
+                              errorText: _couponError,
                             ),
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => _selectMonthYear(context, false),
-                            child: _buildDateBox(
-                              context,
-                              context.loc.endDate,
-                              provider.endDate != null
-                                  ? DateFormat(
-                                      'MM/yyyy',
-                                      'en',
-                                    ).format(provider.endDate!)
-                                  : context.loc.selectEndMonth,
-                              isError:
-                                  _showDateError && provider.endDate == null,
+                        ElevatedButton(
+                          onPressed: _isValidatingCoupon ? null : _validateCoupon,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: provider.property.isHotelApartment
+                                ? const Color(0xFFDFBA6B)
+                                : const Color(0xFF008695),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                           ),
+                          child: _isValidatingCoupon
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  "تطبيق",
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 15),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(
-                          0xFFE0F2F1,
-                        ).withOpacity(isDark ? 0.1 : 0.5),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Center(
-                        child: Text(
-                          context.loc.totalDuration(provider.totalMonths),
-                          style: GoogleFonts.cairo(
-                            color: isDark
-                                ? const Color(0xFF80CBC4)
-                                : const Color(0xFF008695),
-                            fontWeight: FontWeight.bold,
+                    if (_appliedCouponCode != null) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          const Icon(Icons.check_circle_outline, color: Color(0xFF39BB5E), size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              "تم تطبيق الكوبون '$_appliedCouponCode' بنجاح! خصم ${_discountAmount.toStringAsFixed(0)} ${context.loc.currency}",
+                              style: GoogleFonts.cairo(
+                                color: const Color(0xFF39BB5E),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
                           ),
-                        ),
+                          IconButton(
+                            icon: const Icon(Icons.cancel_outlined, color: Colors.red, size: 20),
+                            onPressed: () {
+                              setState(() {
+                                _couponController.clear();
+                                _appliedCouponCode = null;
+                                _discountAmount = 0.0;
+                                _couponDiscountType = null;
+                                _couponDiscountValue = null;
+                              });
+                            },
+                          ),
+                        ],
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
-
               const SizedBox(height: 20),
 
               // Payment Method Selection
@@ -562,11 +700,15 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                               ),
                               decoration: BoxDecoration(
                                 color: _paymentMethod == 'card'
-                                    ? const Color(0xFF008695).withOpacity(0.1)
+                                    ? (provider.property.isHotelApartment
+                                        ? const Color(0xFFDFBA6B).withOpacity(0.1)
+                                        : const Color(0xFF008695).withOpacity(0.1))
                                     : Colors.transparent,
                                 border: Border.all(
                                   color: _paymentMethod == 'card'
-                                      ? const Color(0xFF008695)
+                                      ? (provider.property.isHotelApartment
+                                          ? const Color(0xFFDFBA6B)
+                                          : const Color(0xFF008695))
                                       : Theme.of(
                                           context,
                                         ).dividerColor.withOpacity(0.5),
@@ -578,7 +720,9 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                                   Icon(
                                     Icons.credit_card,
                                     color: _paymentMethod == 'card'
-                                        ? const Color(0xFF008695)
+                                        ? (provider.property.isHotelApartment
+                                            ? const Color(0xFFDFBA6B)
+                                            : const Color(0xFF008695))
                                         : Colors.grey,
                                   ),
                                   const SizedBox(height: 5),
@@ -590,7 +734,9 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                                           ? FontWeight.bold
                                           : FontWeight.normal,
                                       color: _paymentMethod == 'card'
-                                          ? const Color(0xFF008695)
+                                          ? (provider.property.isHotelApartment
+                                              ? const Color(0xFFDFBA6B)
+                                              : const Color(0xFF008695))
                                           : Colors.grey,
                                     ),
                                   ),
@@ -611,11 +757,15 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                               ),
                               decoration: BoxDecoration(
                                 color: _paymentMethod == 'wallet'
-                                    ? const Color(0xFF39BB5E).withOpacity(0.1)
+                                    ? (provider.property.isHotelApartment
+                                        ? const Color(0xFFDFBA6B).withOpacity(0.1)
+                                        : const Color(0xFF39BB5E).withOpacity(0.1))
                                     : Colors.transparent,
                                 border: Border.all(
                                   color: _paymentMethod == 'wallet'
-                                      ? const Color(0xFF39BB5E)
+                                      ? (provider.property.isHotelApartment
+                                          ? const Color(0xFFDFBA6B)
+                                          : const Color(0xFF39BB5E))
                                       : Theme.of(
                                           context,
                                         ).dividerColor.withOpacity(0.5),
@@ -627,7 +777,9 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                                   Icon(
                                     Icons.account_balance_wallet,
                                     color: _paymentMethod == 'wallet'
-                                        ? const Color(0xFF39BB5E)
+                                        ? (provider.property.isHotelApartment
+                                            ? const Color(0xFFDFBA6B)
+                                            : const Color(0xFF39BB5E))
                                         : Colors.grey,
                                   ),
                                   const SizedBox(height: 5),
@@ -639,7 +791,9 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                                           ? FontWeight.bold
                                           : FontWeight.normal,
                                       color: _paymentMethod == 'wallet'
-                                          ? const Color(0xFF39BB5E)
+                                          ? (provider.property.isHotelApartment
+                                              ? const Color(0xFFDFBA6B)
+                                              : const Color(0xFF39BB5E))
                                           : Colors.grey,
                                     ),
                                   ),
@@ -681,159 +835,28 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // Additional Notes
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: isDark
-                      ? []
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.loc.additionalNotes,
-                      style: GoogleFonts.cairo(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    TextFormField(
-                      controller: _notesController,
-                      maxLines: 4,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      decoration: InputDecoration(
-                        hintText: context.loc.notesHint,
-                        hintStyle: GoogleFonts.cairo(
-                          fontSize: 12,
-                          color: Theme.of(context).hintColor,
-                        ),
-                        filled: true,
-                        fillColor: Theme.of(
-                          context,
-                        ).inputDecorationTheme.fillColor,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // ID Upload Section
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: isDark
-                      ? []
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.loc.idVerificationTitle,
-                      style: GoogleFonts.cairo(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      context.loc.idVerificationDesc,
-                      style: GoogleFonts.cairo(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildIdImagePicker(
-                            title: context.loc.idFront,
-                            image: _idFrontImage,
-                            onTap: () => _pickIdImage(true),
-                          ),
-                        ),
-                        const SizedBox(width: 15),
-                        Expanded(
-                          child: _buildIdImagePicker(
-                            title: context.loc.idBack,
-                            image: _idBackImage,
-                            onTap: () => _pickIdImage(false),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_isUploadingImages)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 15),
-                        child: Row(
-                          children: [
-                            const SizedBox(
-                              width: 15,
-                              height: 15,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Color(0xFF008695),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              context.loc.uploadingImages,
-                              style: GoogleFonts.cairo(
-                                fontSize: 12,
-                                color: const Color(0xFF008695),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              // Submit
+                          // Submit
               Container(
                 width: double.infinity,
                 height: 55,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  gradient: provider.property.isHotelApartment
+                      ? const LinearGradient(
+                          colors: [
+                            Color(0xFFF3E5AB),
+                            Color(0xFFDFBA6B),
+                            Color(0xFF9E7D3B),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : const LinearGradient(
+                          colors: [Color(0xFF39BB5E), Color(0xFF008695)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                 ),
                 child: ElevatedButton(
                   onPressed: provider.isSubmitting
@@ -842,19 +865,7 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                           // 1. Validate Form
                           if (!_formKey.currentState!.validate()) return;
 
-                          // 2. Validate Dates with Provider
-                          if (provider.startDate == null ||
-                              provider.endDate == null) {
-                            setState(() => _showDateError = true);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(context.loc.selectDatesError),
-                              ),
-                            );
-                            return;
-                          }
-
-                          // 3. User Info
+                          // 2. User Info
                           final user = context.read<AuthProvider>().user;
                           if (user == null) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -867,21 +878,17 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                             return;
                           }
 
-                          // 4. Validate ID Images
-                          if (_idFrontImage == null || _idBackImage == null) {
+                          // 3. Price validation
+                          if (provider.price <= 0) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(context.loc.uploadIdError),
+                                content: Text(
+                                  'سعر الوحدة المختارة غير صحيح، يرجى التواصل مع الدعم',
+                                  style: GoogleFonts.cairo(),
+                                ),
                               ),
                             );
                             return;
-                          }
-
-                          // 5. Upload Images if not already uploaded
-                          if (_idFrontUrl == null || _idBackUrl == null) {
-                            await _uploadIdImages();
-                            if (_idFrontUrl == null || _idBackUrl == null)
-                              return; // Error occurred and handled in _uploadIdImages
                           }
 
                           await _showPaymentSummary(context);
@@ -894,35 +901,39 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                     ),
                   ),
                   child: provider.isSubmitting
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? CircularProgressIndicator(
+                          color: provider.property.isHotelApartment
+                              ? Colors.black
+                              : Colors.white,
+                        )
                       : Text(
                           context.loc.submitRequest, // "دفع العربون وحجز"
                           style: GoogleFonts.cairo(
-                            color: Colors.white,
+                            color: provider.property.isHotelApartment
+                                ? Colors.black
+                                : Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                 ),
               ),
+              const SizedBox(height: 20),
+              _buildPrivacyContactCard(provider.property.isHotelApartment),
             ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Future<void> startDepositPayment() async {
     final provider = context.read<BookingRequestProvider>();
     setState(() {
-      // Use helper or provider state later, for now local is fine or provider.isSubmitting
     });
 
-    // We can use provider._isSubmitting but it's private.
-    // Let's assume we show loading via the button's state which checks provider.isSubmitting.
-    // Since provider methods handle notifies, we can wrap this in a provider method or just do manual set here if we exposed a setter.
-    // For simplicity, I'll assume we can trigger the loading state or just show a dialog.
-
+    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -936,14 +947,8 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
         'phone': _phoneController.text,
         'email': _emailController.text,
         'notes': _notesController.text,
-        'idFrontUrl': _idFrontUrl,
-        'idBackUrl': _idBackUrl,
+        
       };
-
-      print("Calling cloud function...");
-      print("DEBUG user name: ${_nameController.text}");
-      print("DEBUG: Sending selections: ${provider.selections}");
-      print("DEBUG: Sending isWhole: ${provider.isWhole}");
 
       final result = await FirebaseFunctions.instanceFor(region: 'us-central1')
           .httpsCallable('createDepositBooking')
@@ -956,6 +961,8 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
             "walletNumber": _paymentMethod == 'wallet'
                 ? _walletNumberController.text
                 : null,
+            "couponCode": _appliedCouponCode,
+            "bedCount": provider.bedCount,
           });
 
       Navigator.pop(context); // Close loading dialog
@@ -966,7 +973,6 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
       // Handle Wallet Redirection
       if (_paymentMethod == 'wallet') {
         final redirectUrl = data['redirectUrl'] as String?;
-        print("DEBUG: Wallet Redirect URL: '$redirectUrl'");
 
         if (redirectUrl != null &&
             redirectUrl.isNotEmpty &&
@@ -975,6 +981,7 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
             context,
             MaterialPageRoute(
               builder: (context) => PaymentWebViewScreen(
+                paymentMethod: _paymentMethod,
                 url: redirectUrl,
                 paymentToken: '', // Not used for direct URL
                 iframeId: '',
@@ -986,7 +993,6 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
           );
           return;
         } else {
-          print("DEBUG: Invalid Redirect URL caught. Url: $redirectUrl");
           // Fall through to error or handle explicitly
           throw 'Invalid wallet redirection URL received';
         }
@@ -1005,6 +1011,7 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
           context,
           MaterialPageRoute(
             builder: (context) => PaymentWebViewScreen(
+              paymentMethod: 'card',
               paymentToken: paymentToken.toString(),
               iframeId: iframeId.toString(),
               paymentId: paymentId.toString(),
@@ -1063,140 +1070,170 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
     }
   }
 
-  Future<void> _pickIdImage(bool isFront) async {
-    final XFile? pickedFile = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 70,
-    );
 
-    if (pickedFile != null) {
-      if (!mounted) return;
-      setState(() {
-        if (isFront) {
-          _idFrontImage = File(pickedFile.path);
-          _idFrontUrl = null; // Reset URL to force re-upload
-        } else {
-          _idBackImage = File(pickedFile.path);
-          _idBackUrl = null;
-        }
-      });
-    }
-  }
 
-  Future<void> _uploadIdImages() async {
-    setState(() => _isUploadingImages = true);
-
-    try {
-      if (_idFrontImage != null && _idFrontUrl == null) {
-        _idFrontUrl = await _uploadService.uploadFile(_idFrontImage!);
-      }
-      if (_idBackImage != null && _idBackUrl == null) {
-        _idBackUrl = await _uploadService.uploadFile(_idBackImage!);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.loc.uploadFailed(e.toString()))),
-      );
-    } finally {
-      if (mounted) setState(() => _isUploadingImages = false);
-    }
-  }
-
-  Widget _buildIdImagePicker({
-    required String title,
-    required File? image,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            height: 120,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Theme.of(context).inputDecorationTheme.fillColor,
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(
-                color: Theme.of(context).dividerColor.withOpacity(0.1),
+  Widget _buildPrivacyContactCard(bool isHotelApartment) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return TweenAnimationBuilder<Offset>(
+      tween: Tween(begin: const Offset(0, 1), end: Offset.zero),
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutCubic,
+      builder: (context, offset, child) =>
+          FractionalTranslation(translation: offset, child: child!),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(16),
+          border: isDark ? Border.all(color: const Color(0xFF2F3640)) : null,
+          boxShadow: isDark
+              ? []
+              : [
+                  BoxShadow(
+                    color: isHotelApartment
+                        ? const Color(0xFFDFBA6B).withValues(alpha: 0.05)
+                        : const Color(0xFF008695).withValues(alpha: 0.05),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => PrivacyPolicyScreen(isHotelApartment: isHotelApartment)),
               ),
-              image: image != null
-                  ? DecorationImage(image: FileImage(image), fit: BoxFit.cover)
-                  : null,
-            ),
-            child: image == null
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.add_a_photo_outlined,
-                        color: Color(0xFF008695),
-                        size: 30,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: isHotelApartment
+                          ? const LinearGradient(
+                              colors: [
+                                Color(0xFFF3E5AB),
+                                Color(0xFFDFBA6B),
+                                Color(0xFF9E7D3B),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : const LinearGradient(
+                              colors: [Color(0xFF39BB5E), Color(0xFF008695)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                    ),
+                    child: const Icon(
+                      Icons.privacy_tip_outlined,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      context.loc.privacyPolicy,
+                      style: GoogleFonts.cairo(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        context.loc.tapToUpload,
-                        style: GoogleFonts.cairo(
-                          fontSize: 10,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  )
-                : const SizedBox.shrink(),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: GoogleFonts.cairo(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 14,
+                    color: Colors.grey,
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            Divider(
+              color: isDark ? const Color(0xFF2F3640) : Colors.grey.shade200,
+              height: 24,
+            ),
+            _buildContactRow(
+              icon: Icons.location_on_outlined,
+              text: 'بني سويف، مصر',
+              isDark: isDark,
+              isHotelApartment: isHotelApartment,
+            ),
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: () async {
+                final email = RemoteConfigHelper.supportEmail;
+                final uri = Uri.parse('mailto:$email');
+                if (await canLaunchUrl(uri)) await launchUrl(uri);
+              },
+              child: _buildContactRow(
+                icon: Icons.email_outlined,
+                text: RemoteConfigHelper.supportEmail,
+                isDark: isDark,
+                isHotelApartment: isHotelApartment,
+              ),
+            ),
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: () async {
+                final phone = RemoteConfigHelper.supportPhone;
+                final uri = Uri.parse('tel:$phone');
+                if (await canLaunchUrl(uri)) await launchUrl(uri);
+              },
+              child: _buildContactRow(
+                icon: Icons.phone_outlined,
+                text: RemoteConfigHelper.supportPhone,
+                isDark: isDark,
+                isHotelApartment: isHotelApartment,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildDateBox(
-    BuildContext context,
-    String label,
-    String date, {
-    bool isError = false,
+  Widget _buildContactRow({
+    required IconData icon,
+    required String text,
+    required bool isDark,
+    required bool isHotelApartment,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color:
-            Theme.of(context).inputDecorationTheme.fillColor ??
-            Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(15),
-        border: isError ? Border.all(color: Colors.red, width: 1) : null,
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.calendar_today, size: 18, color: Color(0xFF008695)),
-          const SizedBox(height: 8),
-          Text(
-            label,
+    return Row(
+      children: [
+        ShaderMask(
+          shaderCallback: (bounds) => isHotelApartment
+              ? const LinearGradient(
+                  colors: [
+                    Color(0xFFF3E5AB),
+                    Color(0xFFDFBA6B),
+                    Color(0xFF9E7D3B),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ).createShader(bounds)
+              : const LinearGradient(
+                  colors: [Color(0xFF39BB5E), Color(0xFF008695)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ).createShader(bounds),
+          child: Icon(icon, color: Colors.white, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            text,
             style: GoogleFonts.cairo(
-              color: Theme.of(context).hintColor,
-              fontSize: 11,
+              fontSize: 14,
+              color: isDark ? const Color(0xFF9CA3AF) : Colors.black87,
             ),
           ),
-          const SizedBox(height: 5),
-          Text(
-            date,
-            style: GoogleFonts.cairo(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -1204,7 +1241,10 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
     final provider = context.read<BookingRequestProvider>();
 
     final deposit = provider.property.requiredDeposit ?? 0.0;
-    final remaining = (provider.price / 2) - deposit;
+    final commission = (provider.property.fixedCommission != null && provider.property.fixedCommission! > 0)
+        ? provider.property.fixedCommission!
+        : (provider.price / 2);
+    final remaining = (commission - _discountAmount - deposit) < 0 ? 0.0 : (commission - _discountAmount - deposit);
 
     return showModalBottomSheet(
       context: context,
@@ -1253,6 +1293,16 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
               valueColor: const Color(0xFFD35400),
               isBold: true,
             ),
+            if (_appliedCouponCode != null) ...[
+              const SizedBox(height: 10),
+              _buildSummaryRow(
+                context,
+                "خصم الكوبون ($_appliedCouponCode)",
+                "-${_discountAmount.toStringAsFixed(0)} ${context.loc.currency}",
+                valueColor: const Color(0xFF39BB5E),
+                isBold: true,
+              ),
+            ],
             const SizedBox(height: 10),
             _buildSummaryRow(
               context,
@@ -1294,17 +1344,23 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
             Container(
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
-                color: const Color(0xFF008695).withOpacity(0.05),
+                color: provider.property.isHotelApartment
+                    ? const Color(0xFFDFBA6B).withOpacity(0.05)
+                    : const Color(0xFF008695).withOpacity(0.05),
                 borderRadius: BorderRadius.circular(15),
                 border: Border.all(
-                  color: const Color(0xFF008695).withOpacity(0.1),
+                  color: provider.property.isHotelApartment
+                      ? const Color(0xFFDFBA6B).withOpacity(0.1)
+                      : const Color(0xFF008695).withOpacity(0.1),
                 ),
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.info_outline,
-                    color: Color(0xFF008695),
+                    color: provider.property.isHotelApartment
+                        ? const Color(0xFFDFBA6B)
+                        : const Color(0xFF008695),
                     size: 20,
                   ),
                   const SizedBox(width: 10),
@@ -1313,7 +1369,9 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                       "سيتم تحويلك لصفحة الدفع الآمنة", // context.loc.paymentRedirectNotice
                       style: GoogleFonts.cairo(
                         fontSize: 12,
-                        color: const Color(0xFF008695),
+                        color: provider.property.isHotelApartment
+                            ? const Color(0xFFDFBA6B)
+                            : const Color(0xFF008695),
                       ),
                     ),
                   ),
@@ -1328,20 +1386,38 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 15),
+                      side: provider.property.isHotelApartment
+                          ? const BorderSide(color: Color(0xFFDFBA6B))
+                          : null,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(15),
                       ),
                     ),
-                    child: Text(context.loc.cancel, style: GoogleFonts.cairo()),
+                    child: Text(
+                      context.loc.cancel,
+                      style: GoogleFonts.cairo(
+                        color: provider.property.isHotelApartment
+                            ? const Color(0xFFDFBA6B)
+                            : null,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 15),
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-                      ),
+                      gradient: provider.property.isHotelApartment
+                          ? const LinearGradient(
+                              colors: [
+                                Color(0xFFF3E5AB),
+                                Color(0xFFDFBA6B),
+                                Color(0xFF9E7D3B),
+                              ],
+                            )
+                          : const LinearGradient(
+                              colors: [Color(0xFF39BB5E), Color(0xFF008695)],
+                            ),
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: ElevatedButton(
@@ -1360,12 +1436,113 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                       child: Text(
                         context.loc.confirmAndPay,
                         style: GoogleFonts.cairo(
-                          color: Colors.white,
+                          color: provider.property.isHotelApartment ? Colors.black : Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Directionality(
+              textDirection: TextDirection.ltr,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      final phone = RemoteConfigHelper.supportPhone;
+                      final uri = Uri.parse('tel:$phone');
+                      if (await canLaunchUrl(uri)) await launchUrl(uri);
+                    },
+                    child: Row(
+                      children: [
+                        Text(
+                          RemoteConfigHelper.supportPhone,
+                          style: GoogleFonts.cairo(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[300]
+                                : Colors.grey[700],
+                            fontSize: 12,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.phone_outlined,
+                          color: provider.property.isHotelApartment
+                              ? const Color(0xFFDFBA6B)
+                              : Colors.teal,
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Text(
+                      '|',
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[600]
+                            : Colors.grey[400],
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () async {
+                      final email = RemoteConfigHelper.supportEmail;
+                      final uri = Uri.parse('mailto:$email');
+                      if (await canLaunchUrl(uri)) await launchUrl(uri);
+                    },
+                    child: Row(
+                      children: [
+                        Text(
+                          RemoteConfigHelper.supportEmail,
+                          style: GoogleFonts.cairo(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[300]
+                                : Colors.grey[700],
+                            fontSize: 12,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.email_outlined,
+                          color: provider.property.isHotelApartment
+                              ? const Color(0xFFDFBA6B)
+                              : Colors.teal,
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'شرق النيل - بني سويف',
+                  style: GoogleFonts.cairo(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[300]
+                        : Colors.grey[700],
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.location_on_outlined,
+                  color: provider.property.isHotelApartment
+                      ? const Color(0xFFDFBA6B)
+                      : Colors.teal,
+                  size: 16,
                 ),
               ],
             ),
@@ -1400,215 +1577,6 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _MonthYearPickerSheet extends StatefulWidget {
-  final DateTime initialDate;
-  final bool isStart;
-  final Function(DateTime) onDateSelected;
-
-  const _MonthYearPickerSheet({
-    required this.initialDate,
-    required this.isStart,
-    required this.onDateSelected,
-  });
-
-  @override
-  State<_MonthYearPickerSheet> createState() => _MonthYearPickerSheetState();
-}
-
-class _MonthYearPickerSheetState extends State<_MonthYearPickerSheet> {
-  late int _selectedYear;
-  late int _selectedMonth;
-  final int _currentYear = DateTime.now().year;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedYear = widget.initialDate.year;
-    _selectedMonth = widget.initialDate.month;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 500,
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Theme.of(context).dividerColor.withOpacity(0.1),
-                ),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  widget.isStart
-                      ? context.loc.selectStartMonth
-                      : context.loc.selectEndMonth,
-                  style: GoogleFonts.cairo(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-          ),
-
-          // Year Selector
-          SizedBox(
-            height: 80,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-              itemCount: 5, // Show next 5 years
-              itemBuilder: (context, index) {
-                final year = _currentYear + index;
-                final isSelected = year == _selectedYear;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedYear = year;
-                    });
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 5),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFF008695)
-                          : Theme.of(context).inputDecorationTheme.fillColor ??
-                                Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(20),
-                      border: isSelected
-                          ? null
-                          : Border.all(
-                              color: Theme.of(
-                                context,
-                              ).dividerColor.withOpacity(0.1),
-                            ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        year.toString(),
-                        style: GoogleFonts.cairo(
-                          color: isSelected
-                              ? Colors.white
-                              : Theme.of(context).textTheme.bodyLarge?.color,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          const Divider(height: 1),
-
-          // Month Grid
-          Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(20),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 1.5,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-              ),
-              itemCount: 12,
-              itemBuilder: (context, index) {
-                final month = index + 1;
-
-                // Correct logic: strictly check against currently selected year in state
-                final isActuallySelected = month == _selectedMonth;
-
-                // Disable past months if current year
-                final isPast =
-                    _selectedYear == _currentYear &&
-                    month < DateTime.now().month;
-
-                return InkWell(
-                  onTap: isPast
-                      ? null
-                      : () {
-                          setState(() {
-                            _selectedMonth = month;
-                          });
-                          // Return result and close
-                          widget.onDateSelected(
-                            DateTime(_selectedYear, month, 1),
-                          );
-                          Navigator.pop(context);
-                        },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isActuallySelected
-                          ? const Color(0xFF39BB5E).withOpacity(0.1)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isActuallySelected
-                            ? const Color(0xFF39BB5E)
-                            : (isPast
-                                  ? Theme.of(
-                                      context,
-                                    ).disabledColor.withOpacity(0.1)
-                                  : Theme.of(
-                                      context,
-                                    ).dividerColor.withOpacity(0.1)),
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        DateFormat(
-                          'MMM',
-                          Localizations.localeOf(context).languageCode,
-                        ).format(
-                          DateTime(2024, month),
-                        ), // Use current locale for month names
-                        style: GoogleFonts.cairo(
-                          color: isPast
-                              ? Theme.of(context).disabledColor
-                              : (isActuallySelected
-                                    ? const Color(0xFF39BB5E)
-                                    : Theme.of(
-                                        context,
-                                      ).textTheme.bodyLarge?.color),
-                          fontWeight: isActuallySelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

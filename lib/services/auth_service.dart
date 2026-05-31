@@ -246,6 +246,48 @@ class AuthService {
   }
 
   // ------------------------------------------------------------
+  // Delete Account
+  // ------------------------------------------------------------
+  Future<void> deleteAccount() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      final uid = user.uid;
+      try {
+        // Delete user Firestore document
+        await _firestore.collection('users').doc(uid).delete();
+        // Delete the user from Firebase Auth
+        await user.delete();
+        // Sign out from Google sign in if active
+        await _googleSignIn.signOut();
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'requires-recent-login') {
+          debugPrint("Re-authentication required to delete account.");
+        }
+        rethrow;
+      } catch (e) {
+        debugPrint("Error deleting account: $e");
+        rethrow;
+      }
+    }
+  }
+
+  // ------------------------------------------------------------
+  // Send Password Reset Email
+  // ------------------------------------------------------------
+  Future<void> sendPasswordResetEmail({required String email}) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      debugPrint("Firebase Password Reset Error: [${e.code}] ${e.message}");
+      rethrow;
+    } catch (e, s) {
+      debugPrint("Password Reset Error: $e");
+      debugPrint("Stack: $s");
+      rethrow;
+    }
+  }
+
+  // ------------------------------------------------------------
   // Helpers
   // ------------------------------------------------------------
   User? getCurrentUser() => _auth.currentUser;

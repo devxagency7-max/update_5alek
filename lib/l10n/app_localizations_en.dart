@@ -465,6 +465,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get all => 'All';
 
   @override
+  String get hotel => 'Hotel';
+
+  @override
   String get university => 'University';
 
   @override
@@ -885,6 +888,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get booked => 'Booked';
 
   @override
+  String get sold => 'Sold';
+
+  @override
   String get idVerificationTitle => 'Identity Confirmation (Required)';
 
   @override
@@ -1001,4 +1007,99 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get websiteContent =>
       'For more information and details, you can visit our website.';
+
+  @override
+  String get refundPolicyTitle => 'Refund Policy';
+
+  @override
+  String get refundPolicyContent =>
+      'Users may request a refund within 7 days if the paid service has not been delivered or activated.\n\nRefund requests are reviewed by the Khaleek Areb support team.\n\nIf the refund request is approved, the amount will be returned to the original payment method within 3–7 business days.\n\nRefunds are not applicable if the service has already been delivered or used.\n\nFor refund requests, please contact us via email.';
+
+  @override
+  String get contactInfoTitle => 'Contact Information';
+
+  @override
+  String get contactInfoContent =>
+      'If you have any questions or refund requests, please contact us:\n\nEmail: devx.agency7@gmail.com\nPhone: 01026064819';
+
+  @override
+  String get businessAddressTitle => 'Business Address';
+
+  @override
+  String get businessAddressContent => 'Khaleek Areb\nCairo, Egypt';
+
+  @override
+  String get aboutAppTitle => 'About Khaleek Areb';
+
+  @override
+  String get aboutAppContent =>
+      'Khaleek Areb is a platform that helps university students find nearby accommodation and rental properties across Egypt.\n\nThe platform connects students with property owners to simplify the housing search process.';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'Enter your registered email and we will send you a secure link to reset your password.';
+
+  @override
+  String get sendResetLink => 'Send Reset Link';
+
+  @override
+  String get resetEmailSent => 'Password reset link sent successfully!';
+
+  @override
+  String get noInboxSupportPrefix =>
+      'If your email does not have an inbox to receive emails, you can ';
+
+  @override
+  String get contactUsAction => 'contact us';
+
+  @override
+  String get noInboxSupportSuffix =>
+      ' directly to help you change your password.';
+
+  @override
+  String get deleteAccount => 'Delete Account';
+
+  @override
+  String get deleteAccountTitle => 'Confirm Account Deletion';
+
+  @override
+  String get deleteAccountConfirmation =>
+      'Are you sure you want to permanently delete your account? This action is irreversible and all your bookings and user data will be wiped out.';
+
+  @override
+  String get deleteAccountSuccess => 'Account deleted successfully.';
+
+  @override
+  String get deleteAccountError =>
+      'An error occurred during account deletion. You may need to log out, log in again to protect your data, and try again.';
+
+  @override
+  String get sendReport => 'Send Report';
+
+  @override
+  String get reportEmptyError => 'Please write the report details';
+
+  @override
+  String get reportSuccess => 'Report sent successfully';
+
+  @override
+  String get reportSendError =>
+      'An error occurred while sending the report, please try again';
+
+  @override
+  String get reportIssueTitle => 'Send a Report or Complaint';
+
+  @override
+  String get reportIssueSubtitle =>
+      'If you encounter any problem or have a complaint, please send details and technical support will respond shortly.';
+
+  @override
+  String get reportDetailsLabel => 'Complaint or Report Details';
+
+  @override
+  String get reportHintText =>
+      'Write here the details of the problem or report in detail...';
+
+  @override
+  String get submitReportButton => 'Send Report';
 }

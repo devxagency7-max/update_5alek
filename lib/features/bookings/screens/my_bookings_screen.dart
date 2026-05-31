@@ -1,16 +1,20 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:motareb/core/services/remote_config_helper.dart';
 import '../../property_details/screens/payment_webview_screen.dart';
 
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/extensions/loc_extension.dart';
 import '../../property_details/screens/property_details_screen.dart';
+import '../../home/screens/privacy_policy_screen.dart';
 import '../../../core/models/property_model.dart';
 
 class MyBookingsScreen extends StatelessWidget {
@@ -26,59 +30,69 @@ class MyBookingsScreen extends StatelessWidget {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          context.loc.myBookings,
-          style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      behavior: HitTestBehavior.opaque,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            context.loc.myBookings,
+            style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+          ),
+          centerTitle: true,
         ),
-        centerTitle: true,
-      ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('bookings')
-            .where('userId', isEqualTo: user.uid)
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text(context.loc.noBookings));
-          }
+        body: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('bookings')
+              .where('userId', isEqualTo: user.uid)
+              .orderBy('createdAt', descending: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            }
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return Center(child: Text(context.loc.noBookings));
+            }
 
-          final docs = snapshot.data!.docs;
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: docs.length,
-            itemBuilder: (context, index) {
-              final data = docs[index].data() as Map<String, dynamic>;
-              final date = (data['createdAt'] as Timestamp?)?.toDate();
-              final bookingId = docs[index].id;
+            // نعرض بس الحجوزات اللي اتدفع فيها الـ Deposit فعلاً
+            final docs = snapshot.data!.docs.where((doc) {
+              final d = doc.data() as Map<String, dynamic>;
+              return d['status'] != 'pending_deposit';
+            }).toList();
 
-              // Helper to fetch property details for title/image if needed
-              // For now we just pass data to card
-              return FadeInUp(
-                delay: Duration(milliseconds: index * 100),
-                child: _BookingTimelineCard(
-                  bookingId: bookingId,
-                  data: data,
-                  bookingDate: date,
-                ),
-              );
-            },
-          );
-        },
+            if (docs.isEmpty) {
+              return Center(child: Text(context.loc.noBookings));
+            }
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: docs.length,
+              itemBuilder: (context, index) {
+                final data = docs[index].data() as Map<String, dynamic>;
+                final date = (data['createdAt'] as Timestamp?)?.toDate();
+                final bookingId = docs[index].id;
+
+                return FadeInUp(
+                  delay: Duration(milliseconds: index * 100),
+                  child: _BookingTimelineCard(
+                    bookingId: bookingId,
+                    data: data,
+                    bookingDate: date,
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
 }
 
-class _BookingTimelineCard extends StatelessWidget {
+class _BookingTimelineCard extends StatefulWidget {
   final String bookingId;
   final Map<String, dynamic> data;
   final DateTime? bookingDate;
@@ -90,27 +104,55 @@ class _BookingTimelineCard extends StatelessWidget {
   });
 
   @override
+  State<_BookingTimelineCard> createState() => _BookingTimelineCardState();
+}
+
+class _BookingTimelineCardState extends State<_BookingTimelineCard> {
+  bool _acceptedTerms = false;
+  bool? _isHotelApartment;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfHotelApartment();
+  }
+
+  Future<void> _checkIfHotelApartment() async {
+    final propertyId = widget.data['propertyId'];
+    if (propertyId != null) {
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection('properties')
+            .doc(propertyId)
+            .get();
+        if (doc.exists && mounted) {
+          final data = doc.data();
+          setState(() {
+            _isHotelApartment = data?['isHotelApartment'] ?? false;
+          });
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    // Status Logic
-    String status = data['status'] ?? 'pending';
+    String status = widget.data['status'] ?? 'pending';
     bool isDepositPaid =
         status == 'reserved' ||
         status == 'completed' ||
         status == 'paying_remaining';
     bool isFullyPaid = status == 'completed';
 
-    // Expiry
-    final expiresAtTimestamp = data['expiresAt'] as Timestamp?;
+    final expiresAtTimestamp = widget.data['expiresAt'] as Timestamp?;
     final expiresAt = expiresAtTimestamp?.toDate();
-    /*
-    String expiryText = "";
-    if (expiresAt != null) {
-      expiryText = DateFormat('yyyy/MM/dd hh:mm a').format(expiresAt);
-    }
-    */
+    final bool isExpired =
+        expiresAt != null && expiresAt.isBefore(DateTime.now());
 
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
@@ -130,21 +172,16 @@ class _BookingTimelineCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Header: Property Info (You might need to fetch this or store it in booking)
-          // For now, assume propertyId is available to fetch or title is generic
-          _buildHeader(context, data['propertyId']),
+          _buildHeader(context, widget.data['propertyId']),
 
           const SizedBox(height: 20),
 
-          // 1. Top Timeline (Horizontal)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               children: [
-                // Step 1 Circle
                 _buildStepCircle(context, "1", isDepositPaid),
 
-                // Middle Line & Date
                 Expanded(
                   child: Column(
                     children: [
@@ -174,7 +211,6 @@ class _BookingTimelineCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      // Expiry Countdown centered
                       if ((status == 'reserved' ||
                               status == 'pending_deposit') &&
                           expiresAt != null)
@@ -183,7 +219,6 @@ class _BookingTimelineCard extends StatelessWidget {
                   ),
                 ),
 
-                // Step 2 Circle
                 _buildStepCircle(context, "2", isFullyPaid),
               ],
             ),
@@ -191,13 +226,11 @@ class _BookingTimelineCard extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // 2. Vertical Timeline & Details
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left Side (Deposit)
                 Expanded(
                   child: Column(
                     children: [
@@ -205,7 +238,8 @@ class _BookingTimelineCard extends StatelessWidget {
                       _buildDetailCard(
                         context,
                         "Deposit",
-                        "${data['depositPaid'] ?? data['amount'] ?? 0} EGP", // Make sure to use correct field
+                        // Bug #7: قبل الدفع نعرض depositAmount (المطلوب)، بعده نعرض depositPaid (اللي اتدفع)
+                        "${isDepositPaid ? (widget.data['depositPaid'] ?? widget.data['depositAmount'] ?? 0) : (widget.data['depositAmount'] ?? widget.data['depositPaid'] ?? 0)} EGP",
                         isDepositPaid ? Colors.green : Colors.orange,
                         isDepositPaid ? "Paid" : "Pending",
                       ),
@@ -213,7 +247,6 @@ class _BookingTimelineCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 20),
-                // Right Side (Remaining)
                 Expanded(
                   child: Column(
                     children: [
@@ -221,7 +254,7 @@ class _BookingTimelineCard extends StatelessWidget {
                       _buildDetailCard(
                         context,
                         "Remaining",
-                        "${data['remainingAmount'] ?? 0} EGP",
+                        "${widget.data['remainingAmount'] ?? 0} EGP",
                         isFullyPaid
                             ? Colors.green
                             : (status == "paying_remaining"
@@ -234,31 +267,65 @@ class _BookingTimelineCard extends StatelessWidget {
                                   : "Pending"),
                       ),
 
-                      // Action Button for Remaining if Reserved
-                      if (status == 'reserved')
+                      if (status == 'reserved') ...[
                         Padding(
                           padding: const EdgeInsets.only(top: 8.0),
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.brandPrimary,
-                              minimumSize: const Size(double.infinity, 30),
-                              padding: const EdgeInsets.symmetric(vertical: 5),
+                          child: Container(
+                            width: double.infinity,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              gradient: (_isHotelApartment == true)
+                                  ? const LinearGradient(
+                                      colors: [
+                                        Color(0xFFF3E5AB),
+                                        Color(0xFFDFBA6B),
+                                        Color(0xFF9E7D3B),
+                                      ],
+                                    )
+                                  : null,
+                              color: (_isHotelApartment == true)
+                                  ? null
+                                  : (isExpired
+                                        ? Colors.grey
+                                        : AppTheme.brandPrimary),
                             ),
-                            onPressed: () {
-                              // Navigate to Payment or call function
-                              // For simplicity, user might need to go to details page or trigger here
-                              // Ideally trigger 'createRemainingPayment' logic here or navigate
-                              _handleRemainingPayment(context);
-                            },
-                            child: Text(
-                              "Pay Now",
-                              style: GoogleFonts.cairo(
-                                fontSize: 12,
-                                color: Colors.white,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                disabledBackgroundColor: Colors.transparent,
+                                minimumSize: const Size(double.infinity, 30),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 5,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: isExpired
+                                  ? null
+                                  : () => _handleRemainingPayment(context),
+                              child: Text(
+                                "Pay Now",
+                                style: GoogleFonts.cairo(
+                                  fontSize: 12,
+                                  fontWeight: (_isHotelApartment == true)
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  color: (_isHotelApartment == true)
+                                      ? Colors.black
+                                      : Colors.white,
+                                ),
                               ),
                             ),
                           ),
                         ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: _buildTermsRow(context, isDark),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -271,18 +338,102 @@ class _BookingTimelineCard extends StatelessWidget {
     );
   }
 
-  Future<void> _handleRemainingPayment(BuildContext context) async {
-    // 1. Select Payment Method
-    String? selectedMethod;
-    String? walletNumber;
+  Widget _buildTermsRow(BuildContext context, bool isDark) {
+    return FadeInUp(
+      delay: const Duration(milliseconds: 500),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: Checkbox(
+              value: _acceptedTerms,
+              onChanged: (val) => setState(() => _acceptedTerms = val ?? false),
+              activeColor: (_isHotelApartment == true)
+                  ? const Color(0xFFDFBA6B)
+                  : Colors.teal,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: GoogleFonts.cairo(
+                  fontSize: 11,
+                  color: isDark ? Colors.grey[400] : Colors.grey[700],
+                ),
+                children: [
+                  const TextSpan(text: 'أوافق على '),
+                  TextSpan(
+                    text: 'شروط الخدمة',
+                    style: GoogleFonts.cairo(
+                      fontSize: 11,
+                      color: (_isHotelApartment == true)
+                          ? const Color(0xFFDFBA6B)
+                          : Colors.teal,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () async {
+                        final uri = Uri.parse(RemoteConfigHelper.lekOraebUrl);
+                        if (await canLaunchUrl(uri)) await launchUrl(uri);
+                      },
+                  ),
+                  const TextSpan(text: ' و '),
+                  TextSpan(
+                    text: 'سياسة الخصوصية',
+                    style: GoogleFonts.cairo(
+                      fontSize: 11,
+                      color: (_isHotelApartment == true)
+                          ? const Color(0xFFDFBA6B)
+                          : Colors.teal,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PrivacyPolicyScreen(
+                              isHotelApartment: _isHotelApartment == true,
+                            ),
+                          ),
+                        );
+                      },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    await showModalBottomSheet(
+  Future<void> _handleRemainingPayment(BuildContext context) async {
+    if (!_acceptedTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'يجب الموافقة على شروط الخدمة وسياسة الخصوصية أولاً',
+            style: GoogleFonts.cairo(),
+          ),
+        ),
+      );
+      return;
+    }
+
+    final result = await showModalBottomSheet<Map<String, String?>>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
+        String? localSelectedMethod;
+        String? localWalletNumber;
         return StatefulBuilder(
           builder: (context, setState) {
             return Padding(
@@ -304,57 +455,96 @@ class _BookingTimelineCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // Card Option
                   ListTile(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(
-                        color: selectedMethod == 'card'
-                            ? AppTheme.brandPrimary
+                        color: localSelectedMethod == 'card'
+                            ? ((_isHotelApartment == true)
+                                  ? const Color(0xFFDFBA6B)
+                                  : AppTheme.brandPrimary)
                             : Colors.grey.shade300,
+                        width: localSelectedMethod == 'card' ? 2 : 1,
                       ),
                     ),
-                    leading: const Icon(Icons.credit_card, color: Colors.blue),
+                    leading: Icon(
+                      Icons.credit_card,
+                      color:
+                          localSelectedMethod == 'card' && _isHotelApartment == true
+                          ? const Color(0xFFDFBA6B)
+                          : Colors.blue,
+                    ),
                     title: Text(
                       "Credit/Debit Card",
-                      style: GoogleFonts.cairo(),
+                      style: GoogleFonts.cairo(
+                        fontWeight: localSelectedMethod == 'card'
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color:
+                            localSelectedMethod == 'card' &&
+                                _isHotelApartment == true
+                            ? const Color(0xFFDFBA6B)
+                            : null,
+                      ),
                     ),
-                    trailing: selectedMethod == 'card'
-                        ? const Icon(
+                    trailing: localSelectedMethod == 'card'
+                        ? Icon(
                             Icons.check_circle,
-                            color: AppTheme.brandPrimary,
+                            color: (_isHotelApartment == true)
+                                ? const Color(0xFFDFBA6B)
+                                : AppTheme.brandPrimary,
                           )
                         : null,
                     onTap: () => setState(() {
-                      selectedMethod = 'card';
-                      walletNumber = null;
+                      localSelectedMethod = 'card';
+                      localWalletNumber = null;
                     }),
                   ),
                   const SizedBox(height: 10),
-                  // Wallet Option
                   ListTile(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(
-                        color: selectedMethod == 'wallet'
-                            ? AppTheme.brandPrimary
+                        color: localSelectedMethod == 'wallet'
+                            ? ((_isHotelApartment == true)
+                                  ? const Color(0xFFDFBA6B)
+                                  : AppTheme.brandPrimary)
                             : Colors.grey.shade300,
+                        width: localSelectedMethod == 'wallet' ? 2 : 1,
                       ),
                     ),
-                    leading: const Icon(
+                    leading: Icon(
                       Icons.account_balance_wallet,
-                      color: Colors.orange,
+                      color:
+                          localSelectedMethod == 'wallet' &&
+                              _isHotelApartment == true
+                          ? const Color(0xFFDFBA6B)
+                          : Colors.orange,
                     ),
-                    title: Text("Mobile Wallet", style: GoogleFonts.cairo()),
-                    trailing: selectedMethod == 'wallet'
-                        ? const Icon(
+                    title: Text(
+                      "Mobile Wallet",
+                      style: GoogleFonts.cairo(
+                        fontWeight: localSelectedMethod == 'wallet'
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color:
+                            localSelectedMethod == 'wallet' &&
+                                _isHotelApartment == true
+                            ? const Color(0xFFDFBA6B)
+                            : null,
+                      ),
+                    ),
+                    trailing: localSelectedMethod == 'wallet'
+                        ? Icon(
                             Icons.check_circle,
-                            color: AppTheme.brandPrimary,
+                            color: (_isHotelApartment == true)
+                                ? const Color(0xFFDFBA6B)
+                                : AppTheme.brandPrimary,
                           )
                         : null,
-                    onTap: () => setState(() => selectedMethod = 'wallet'),
+                    onTap: () => setState(() => localSelectedMethod = 'wallet'),
                   ),
-                  if (selectedMethod == 'wallet') ...[
+                  if (localSelectedMethod == 'wallet') ...[
                     const SizedBox(height: 15),
                     TextField(
                       autofocus: true,
@@ -365,25 +555,87 @@ class _BookingTimelineCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         prefixIcon: const Icon(Icons.phone_android),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: (_isHotelApartment == true)
+                                ? const Color(0xFFDFBA6B)
+                                : AppTheme.brandPrimary,
+                          ),
+                        ),
                       ),
                       keyboardType: TextInputType.phone,
-                      onChanged: (val) => walletNumber = val,
+                      onChanged: (val) => localWalletNumber = val,
                     ),
                   ],
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.brandPrimary,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        gradient: (_isHotelApartment == true)
+                            ? const LinearGradient(
+                                colors: [
+                                  Color(0xFFF3E5AB),
+                                  Color(0xFFDFBA6B),
+                                  Color(0xFF9E7D3B),
+                                ],
+                              )
+                            : null,
+                        color: (_isHotelApartment == true)
+                            ? null
+                            : AppTheme.brandPrimary,
                       ),
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        "Continue",
-                        style: GoogleFonts.cairo(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () {
+                          if (localSelectedMethod == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'اختر طريقة الدفع أولاً',
+                                  style: GoogleFonts.cairo(),
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                          if (localSelectedMethod == 'wallet' &&
+                              (localWalletNumber == null ||
+                                  !RegExp(r'^01[0-2,5]{1}[0-9]{8}$')
+                                      .hasMatch(localWalletNumber!))) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'رقم المحفظة غير صحيح',
+                                  style: GoogleFonts.cairo(),
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                          Navigator.pop(context, {
+                            'method': localSelectedMethod,
+                            'wallet': localWalletNumber,
+                          });
+                        },
+                        child: Text(
+                          "Continue",
+                          style: GoogleFonts.cairo(
+                            color: (_isHotelApartment == true)
+                                ? Colors.black
+                                : Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -396,9 +648,13 @@ class _BookingTimelineCard extends StatelessWidget {
       },
     );
 
-    if (selectedMethod == null) return; // Cancelled
+    if (result == null) return;
+    final selectedMethod = result['method'];
+    final walletNumber = result['wallet'];
+
+    if (selectedMethod == null) return;
     if (selectedMethod == 'wallet' &&
-        (walletNumber == null || walletNumber!.length < 11)) {
+        (walletNumber == null || walletNumber.length < 11)) {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
@@ -419,13 +675,13 @@ class _BookingTimelineCard extends StatelessWidget {
       final result = await FirebaseFunctions.instanceFor(region: 'us-central1')
           .httpsCallable('createRemainingPayment')
           .call({
-            'bookingId': bookingId,
+            'bookingId': widget.bookingId,
             'paymentMethod': selectedMethod,
             'walletNumber': walletNumber,
           });
 
       if (!context.mounted) return;
-      Navigator.pop(context); // Close loading
+      Navigator.pop(context);
 
       final resData = result.data as Map<String, dynamic>;
       final paymentToken = resData['paymentToken'];
@@ -436,31 +692,30 @@ class _BookingTimelineCard extends StatelessWidget {
       debugPrint("📱 [CLIENT] Remaining Payment Initiated");
 
       if (selectedMethod == 'wallet' && redirectUrl != null) {
-        // Handle Wallet Redirect
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => PaymentWebViewScreen(
-              paymentToken:
-                  "WALLET_TOKEN", // Placeholder, not needed for direct URL
-              iframeId: "WALLET_ID", // Placeholder
+              paymentMethod: selectedMethod,
+              paymentToken: "WALLET_TOKEN",
+              iframeId: "WALLET_ID",
               paymentId: paymentId?.toString() ?? "",
-              bookingId: bookingId,
+              bookingId: widget.bookingId,
               paymentType: 'remaining',
               url: redirectUrl,
             ),
           ),
         );
       } else if (paymentToken != null && iframeId != null) {
-        // Handle Card Iframe
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => PaymentWebViewScreen(
+              paymentMethod: selectedMethod,
               paymentToken: paymentToken.toString(),
               iframeId: iframeId.toString(),
               paymentId: paymentId?.toString() ?? "",
-              bookingId: bookingId,
+              bookingId: widget.bookingId,
               paymentType: 'remaining',
             ),
           ),
@@ -623,7 +878,6 @@ class _BookingTimelineCard extends StatelessWidget {
             color: Colors.grey,
           ),
           onTap: () {
-            // Optional: Navigate to Property Details
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -651,7 +905,7 @@ class CountdownTimer extends StatefulWidget {
 }
 
 class _CountdownTimerState extends State<CountdownTimer> {
-  late Timer _timer;
+  Timer? _timer;
   Duration _duration = Duration.zero;
 
   @override
@@ -673,13 +927,13 @@ class _CountdownTimerState extends State<CountdownTimer> {
       setState(() {
         _duration = Duration.zero;
       });
-      _timer.cancel();
+      _timer?.cancel();
     }
   }
 
   @override
   void dispose() {
-    _timer.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 

@@ -72,7 +72,7 @@ class AdService {
   // --- Interstitial Ads ---
   void _startTimer() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1000), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 250), (timer) {
       showInterstitialAd();
     });
   }

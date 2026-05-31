@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:motareb/core/services/remote_config_helper.dart';
 
 /// AdsController manages Google Mobile Ads and Firebase Remote Config.
 /// It provides a central place to control ad visibility and load ads.
@@ -42,7 +43,22 @@ class AdsController {
       );
 
       // 3. Set default values
-      await _remoteConfig.setDefaults({_adsEnabledKey: false});
+      await _remoteConfig.setDefaults({
+        _adsEnabledKey: false,
+        'dev_x_one_url': 'https://dev-x-one.vercel.app/',
+        'lek_oraeb_url': 'https://5lek-oraeb.vercel.app/',
+        'support_email': 'khalekqoraeb@gmail.com',
+        'support_phone': '01129455770',
+        'show_phone_field': true,
+        'show_ramadan_theme': false,
+        'dev_x_logo_url': 'https://pub-5fe3afd0e7d64de7af15bed6205d045e.r2.dev/devx.png',
+        'android_banner_ad_unit_id': 'ca-app-pub-2375099279419840/5691604828',
+        'ios_banner_ad_unit_id': 'ca-app-pub-2375099279419840/5733680850',
+        'android_interstitial_ad_unit_id': 'ca-app-pub-2375099279419840/5514854314',
+        'ios_interstitial_ad_unit_id': 'ca-app-pub-2375099279419840/7909144406',
+        'android_native_ad_unit_id': 'ca-app-pub-2375099279419840/1300277132',
+        'ios_native_ad_unit_id': 'ca-app-pub-2375099279419840/4688192491',
+      });
 
       // 4. Fetch and activate Remote Config
       // We use fetchAndActivate to get the latest values from the server
@@ -52,6 +68,9 @@ class AdsController {
       // 5. Update local state
       _adsEnabled = _remoteConfig.getBool(_adsEnabledKey);
       debugPrint('🔥 [RemoteConfig] ads_enabled value is: $_adsEnabled');
+
+      // Update RemoteConfigHelper Two-Layer cache
+      await RemoteConfigHelper.updateCacheFromFirebase();
 
       // 6. Preload Interstitial if enabled
       if (_adsEnabled) {
@@ -69,6 +88,9 @@ class AdsController {
     try {
       await _remoteConfig.fetchAndActivate();
       _adsEnabled = _remoteConfig.getBool(_adsEnabledKey);
+
+      // Update RemoteConfigHelper Two-Layer cache
+      await RemoteConfigHelper.updateCacheFromFirebase();
 
       // If ads were turned ON, and we don't have an interstitial, load one
       if (_adsEnabled && _interstitialAd == null) {
@@ -89,8 +111,8 @@ class AdsController {
           : 'ca-app-pub-3940256099942544/2934735716'; // Test Banner iOS
     }
     return Platform.isAndroid
-        ? 'ca-app-pub-2375099279419840/5691604828' // Production Banner Android
-        : 'YOUR_IOS_BANNER_AD_UNIT_ID';
+        ? RemoteConfigHelper.androidBannerAdUnitId
+        : RemoteConfigHelper.iosBannerAdUnitId;
   }
 
   static String get interstitialAdUnitId {
@@ -100,8 +122,8 @@ class AdsController {
           : 'ca-app-pub-3940256099942544/4411468910'; // Test Interstitial iOS
     }
     return Platform.isAndroid
-        ? 'ca-app-pub-2375099279419840/5514854314' // Production Interstitial Android
-        : 'YOUR_IOS_INTERSTITIAL_AD_UNIT_ID';
+        ? RemoteConfigHelper.androidInterstitialAdUnitId
+        : RemoteConfigHelper.iosInterstitialAdUnitId;
   }
 
   static String get nativeAdUnitId {
@@ -111,8 +133,8 @@ class AdsController {
           : 'ca-app-pub-3940256099942544/3986624511'; // Test Native iOS
     }
     return Platform.isAndroid
-        ? 'ca-app-pub-2375099279419840/1300277132' // Production Native Android
-        : 'YOUR_IOS_NATIVE_AD_UNIT_ID';
+        ? RemoteConfigHelper.androidNativeAdUnitId
+        : RemoteConfigHelper.iosNativeAdUnitId;
   }
 
   // --- Interstitial Logic ---

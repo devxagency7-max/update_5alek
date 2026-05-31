@@ -1,6 +1,7 @@
 import 'package:dotlottie_loader/dotlottie_loader.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
+import 'package:motareb/core/services/remote_config_helper.dart';
 import 'package:lottie/lottie.dart';
 
 class RamadanOverlay extends StatefulWidget {
@@ -24,17 +25,18 @@ class _RamadanOverlayState extends State<RamadanOverlay> {
   }
 
   void _checkConfig() {
-    bool enabled = _remoteConfig.getBool('show_ramadan_theme');
-    debugPrint('🔥 [RamadanOverlay] show_ramadan_theme: $enabled');
+    bool enabled = RemoteConfigHelper.showRamadanTheme;
+    debugPrint('🔥 [RamadanOverlay] show_ramadan_theme from cache: $enabled');
     setState(() {
       _isVisible = enabled;
     });
   }
 
   void _listenToConfigChanges() {
-    _remoteConfig.onConfigUpdated.listen((event) async {
-      await _remoteConfig.activate();
-      debugPrint('🔥 [RamadanOverlay] Config Updated!');
+    FirebaseRemoteConfig.instance.onConfigUpdated.listen((event) async {
+      await FirebaseRemoteConfig.instance.activate();
+      await RemoteConfigHelper.updateCacheFromFirebase();
+      debugPrint('🔥 [RamadanOverlay] Config Updated and cache synced!');
       _checkConfig();
     });
   }

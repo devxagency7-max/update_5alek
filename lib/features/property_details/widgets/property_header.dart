@@ -32,6 +32,9 @@ class PropertyHeader extends StatelessWidget {
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     height: 1.2,
+                    color: property.isHotelApartment
+                        ? const Color(0xFFDFBA6B)
+                        : Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
                 if (property.featuredLabel != null &&
@@ -43,11 +46,17 @@ class PropertyHeader extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      gradient: AppTheme.primaryGradient,
+                      gradient: property.isHotelApartment
+                          ? const LinearGradient(
+                              colors: [Color(0xFFDFBA6B), Color(0xFF9E7D3B)],
+                            )
+                          : AppTheme.primaryGradient,
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF008695).withOpacity(0.2),
+                          color: property.isHotelApartment
+                              ? const Color(0xFF9E7D3B).withOpacity(0.2)
+                              : const Color(0xFF008695).withOpacity(0.2),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -57,7 +66,7 @@ class PropertyHeader extends StatelessWidget {
                       property.localizedFeaturedLabel(context),
                       style: GoogleFonts.cairo(
                         fontSize: 12,
-                        color: Colors.white,
+                        color: property.isHotelApartment ? Colors.black : Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -70,15 +79,19 @@ class PropertyHeader extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF008695).withOpacity(0.1),
+                        color: property.isHotelApartment
+                            ? const Color(0xFFDFBA6B).withOpacity(0.1)
+                            : const Color(0xFF008695).withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.location_on_rounded,
                         size: 18,
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF39BB5E)
-                            : const Color(0xFF008695),
+                        color: property.isHotelApartment
+                            ? const Color(0xFFDFBA6B)
+                            : (Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF39BB5E)
+                                : const Color(0xFF008695)),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -90,9 +103,9 @@ class PropertyHeader extends StatelessWidget {
                           style: GoogleFonts.cairo(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.color,
+                            color: property.isHotelApartment
+                                ? Colors.grey.shade400
+                                : Theme.of(context).textTheme.bodyMedium?.color,
                           ),
                         ),
                       ),
@@ -123,7 +136,9 @@ class PropertyHeader extends StatelessWidget {
                 isFavorite
                     ? Icons.favorite_rounded
                     : Icons.favorite_border_rounded,
-                color: isFavorite ? Colors.red : const Color(0xFF008695),
+                color: isFavorite
+                    ? Colors.red
+                    : (property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695)),
                 size: 28,
               ),
               onPressed: onToggleFavorite,

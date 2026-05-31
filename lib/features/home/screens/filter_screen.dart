@@ -12,7 +12,7 @@ class FilterScreen extends StatefulWidget {
 }
 
 class _FilterScreenState extends State<FilterScreen> {
-  RangeValues _currentRangeValues = const RangeValues(500, 3000);
+  RangeValues _currentRangeValues = const RangeValues(500, 20000);
   List<String> _selectedHousingTypes = [];
   List<String> _selectedGenders = [];
 
@@ -22,11 +22,11 @@ class _FilterScreenState extends State<FilterScreen> {
     final provider = context.read<HomeProvider>();
     // Initialize with current provider values if set, or defaults
     if (provider.priceRange.end > 0) {
-      // Clamp to max 10000 to avoid RangeSlider errors if provider has higher value
+      // Clamp to max 100000 to avoid RangeSlider errors if provider has higher value
       double start = provider.priceRange.start;
       double end = provider.priceRange.end;
 
-      if (end > 10000) end = 10000;
+      if (end > 100000) end = 100000;
       if (start > end) start = 0;
 
       _currentRangeValues = RangeValues(start, end);
@@ -76,7 +76,7 @@ class _FilterScreenState extends State<FilterScreen> {
             TextButton(
               onPressed: () {
                 setState(() {
-                  _currentRangeValues = const RangeValues(500, 3000);
+                  _currentRangeValues = const RangeValues(0, 100000);
                   _selectedHousingTypes.clear();
                   _selectedGenders.clear();
                 });
@@ -131,7 +131,7 @@ class _FilterScreenState extends State<FilterScreen> {
                 shadowColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                ),
+                  ),
               ),
               child: Text(
                 context.loc.applyFilter,
@@ -181,8 +181,8 @@ class _FilterScreenState extends State<FilterScreen> {
                 RangeSlider(
                   values: _currentRangeValues,
                   min: 0,
-                  max: 10000,
-                  divisions: 50,
+                  max: 100000,
+                  divisions: 100,
                   activeColor: const Color(0xFF39BB5E),
                   inactiveColor: Theme.of(context).brightness == Brightness.dark
                       ? Colors.grey.shade800

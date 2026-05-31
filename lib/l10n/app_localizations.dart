@@ -1010,6 +1010,12 @@ abstract class AppLocalizations {
   /// **'All'**
   String get all;
 
+  /// No description provided for @hotel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hotel'**
+  String get hotel;
+
   /// No description provided for @university.
   ///
   /// In en, this message translates to:
@@ -1814,6 +1820,12 @@ abstract class AppLocalizations {
   /// **'Booked'**
   String get booked;
 
+  /// No description provided for @sold.
+  ///
+  /// In en, this message translates to:
+  /// **'Sold'**
+  String get sold;
+
   /// No description provided for @idVerificationTitle.
   ///
   /// In en, this message translates to:
@@ -2023,6 +2035,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'For more information and details, you can visit our website.'**
   String get websiteContent;
+
+  /// No description provided for @refundPolicyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund Policy'**
+  String get refundPolicyTitle;
+
+  /// No description provided for @refundPolicyContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Users may request a refund within 7 days if the paid service has not been delivered or activated.\n\nRefund requests are reviewed by the Khaleek Areb support team.\n\nIf the refund request is approved, the amount will be returned to the original payment method within 3–7 business days.\n\nRefunds are not applicable if the service has already been delivered or used.\n\nFor refund requests, please contact us via email.'**
+  String get refundPolicyContent;
+
+  /// No description provided for @contactInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Information'**
+  String get contactInfoTitle;
+
+  /// No description provided for @contactInfoContent.
+  ///
+  /// In en, this message translates to:
+  /// **'If you have any questions or refund requests, please contact us:\n\nEmail: devx.agency7@gmail.com\nPhone: 01026064819'**
+  String get contactInfoContent;
+
+  /// No description provided for @businessAddressTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Business Address'**
+  String get businessAddressTitle;
+
+  /// No description provided for @businessAddressContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Khaleek Areb\nCairo, Egypt'**
+  String get businessAddressContent;
+
+  /// No description provided for @aboutAppTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About Khaleek Areb'**
+  String get aboutAppTitle;
+
+  /// No description provided for @aboutAppContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Khaleek Areb is a platform that helps university students find nearby accommodation and rental properties across Egypt.\n\nThe platform connects students with property owners to simplify the housing search process.'**
+  String get aboutAppContent;
+
+  /// No description provided for @forgotPasswordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your registered email and we will send you a secure link to reset your password.'**
+  String get forgotPasswordSubtitle;
+
+  /// No description provided for @sendResetLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Reset Link'**
+  String get sendResetLink;
+
+  /// No description provided for @resetEmailSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset link sent successfully!'**
+  String get resetEmailSent;
+
+  /// No description provided for @noInboxSupportPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'If your email does not have an inbox to receive emails, you can '**
+  String get noInboxSupportPrefix;
+
+  /// No description provided for @contactUsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'contact us'**
+  String get contactUsAction;
+
+  /// No description provided for @noInboxSupportSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **' directly to help you change your password.'**
+  String get noInboxSupportSuffix;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Account Deletion'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to permanently delete your account? This action is irreversible and all your bookings and user data will be wiped out.'**
+  String get deleteAccountConfirmation;
+
+  /// No description provided for @deleteAccountSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deleted successfully.'**
+  String get deleteAccountSuccess;
+
+  /// No description provided for @deleteAccountError.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred during account deletion. You may need to log out, log in again to protect your data, and try again.'**
+  String get deleteAccountError;
+
+  /// No description provided for @sendReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Report'**
+  String get sendReport;
+
+  /// No description provided for @reportEmptyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please write the report details'**
+  String get reportEmptyError;
+
+  /// No description provided for @reportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Report sent successfully'**
+  String get reportSuccess;
+
+  /// No description provided for @reportSendError.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred while sending the report, please try again'**
+  String get reportSendError;
+
+  /// No description provided for @reportIssueTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a Report or Complaint'**
+  String get reportIssueTitle;
+
+  /// No description provided for @reportIssueSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'If you encounter any problem or have a complaint, please send details and technical support will respond shortly.'**
+  String get reportIssueSubtitle;
+
+  /// No description provided for @reportDetailsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Complaint or Report Details'**
+  String get reportDetailsLabel;
+
+  /// No description provided for @reportHintText.
+  ///
+  /// In en, this message translates to:
+  /// **'Write here the details of the problem or report in detail...'**
+  String get reportHintText;
+
+  /// No description provided for @submitReportButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Report'**
+  String get submitReportButton;
 }
 
 class _AppLocalizationsDelegate

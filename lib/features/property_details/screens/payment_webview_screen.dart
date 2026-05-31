@@ -18,6 +18,7 @@ class PaymentWebViewScreen extends StatefulWidget {
   final String paymentId;
   final String bookingId;
   final String paymentType; // 'deposit' or 'remaining'
+  final String? paymentMethod; // 'card' or 'wallet'
 
   const PaymentWebViewScreen({
     super.key,
@@ -27,6 +28,7 @@ class PaymentWebViewScreen extends StatefulWidget {
     required this.paymentId,
     required this.bookingId,
     required this.paymentType,
+    this.paymentMethod,
   });
 
   @override
@@ -39,6 +41,8 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
   bool _isVerifying = false; // New state for Dual Confirmation
   StreamSubscription? _paymentSubscription;
   StreamSubscription? _bookingSubscription;
+  Timer? _verificationTimeoutTimer;
+  bool _isTimeout = false;
 
   @override
   void initState() {
@@ -120,16 +124,20 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
         });
   }
 
-  /// Checks the URL for Paymob success/fail callbacks
-  /// Returns TRUE if we need to prevent navigation (intercept).
+  void _startTimeoutTimer() {
+    _verificationTimeoutTimer?.cancel();
+    _verificationTimeoutTimer = Timer(const Duration(seconds: 15), () {
+      if (mounted && _isVerifying) {
+        setState(() {
+          _isTimeout = true;
+        });
+      }
+    });
+  }
+
   bool _checkUrl(String url) {
-    debugPrint('PaymentWebView Intercepting URL: $url');
+    debugPrint('PaymentWebView Intercepting URL: ${Uri.parse(url).host}');
 
-    // Paymob Iframe usually redirects to a callback URL after completion.
-    // We only want to intercept if the URL is a redirection AWAY from Paymob's domain,
-    // or if it explicitly contains the success/failure parameters.
-
-    final bool isPaymobDomain = url.contains('accept.paymob.com');
     final bool isSuccess =
         url.contains('success=true') || url.contains('txn_response_code=0');
     final bool isFailure =
@@ -137,13 +145,19 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
         (url.contains('txn_response_code') &&
             !url.contains('txn_response_code=0'));
 
-    // If it's a success or failure callback
-    if ((isSuccess || isFailure) && !isPaymobDomain) {
+    if (isFailure) {
+      debugPrint('Confirmed Redirect to Failure URL: $url');
+      _onPaymentFailed();
+      return true;
+    }
+
+    if (isSuccess) {
       if (!_isVerifying) {
-        debugPrint('Confirmed Redirect to: $url - Waiting for Firestore...');
+        debugPrint('Confirmed Redirect to Success URL: $url - Waiting for Firestore...');
         setState(() {
           _isVerifying = true; // Show "Verifying from server..." Overlay
         });
+        _startTimeoutTimer();
       }
       return true; // Stop navigation, the listener will take it from here
     }
@@ -154,6 +168,7 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
   void _onPaymentConfirmed() {
     _paymentSubscription?.cancel();
     _bookingSubscription?.cancel();
+    _verificationTimeoutTimer?.cancel();
     if (!mounted) return;
 
     // Close WebView and Navigate to Success Screen
@@ -169,12 +184,14 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
   }
 
   void _onPaymentFailed() {
-    // Unlike success, failure can be retried, or we can exit.
-    // We don't necessarily close the screen immediately if it's from URL,
-    // but typically we want to show the BottomSheet.
-
-    // If it's already verifying (maybe got false positive then fail), stop verifying.
-    setState(() => _isVerifying = false);
+    _paymentSubscription?.cancel();
+    _bookingSubscription?.cancel();
+    _verificationTimeoutTimer?.cancel();
+    if (!mounted) return;
+    setState(() {
+      _isVerifying = false;
+      _isTimeout = false;
+    });
 
     showModalBottomSheet(
       context: context,
@@ -184,6 +201,7 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => PaymentFailedBottomSheet(
+        paymentMethod: widget.paymentMethod,
         onRetry: () {
           Navigator.pop(context); // Close BottomSheet
           _controller.reload(); // Reload WebView to try again
@@ -200,6 +218,7 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
   void dispose() {
     _paymentSubscription?.cancel();
     _bookingSubscription?.cancel();
+    _verificationTimeoutTimer?.cancel();
     super.dispose();
   }
 
@@ -212,7 +231,14 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        _showExitConfirmation();
+        if (_isTimeout) {
+          _paymentSubscription?.cancel();
+          _bookingSubscription?.cancel();
+          _verificationTimeoutTimer?.cancel();
+          Navigator.pop(context);
+        } else {
+          _showExitConfirmation();
+        }
       },
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -253,36 +279,92 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Animated Icon or Loading
-                          const SizedBox(
-                            width: 60,
-                            height: 60,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 3,
-                              color: Color(0xFF008695),
-                            ),
-                          ),
-                          const SizedBox(height: 40),
-                          Text(
-                            'جارٍ تأكيد العملية...',
-                            style: GoogleFonts.cairo(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 40),
-                            child: Text(
-                              'نحن ننتظر الآن تأكيد البنك الرسمي لتحديث حالة حجزك في ثوانٍ.',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.cairo(
-                                fontSize: 14,
-                                color: Colors.grey,
+                          if (!_isTimeout) ...[
+                            // Animated Icon or Loading
+                            const SizedBox(
+                              width: 60,
+                              height: 60,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                color: Color(0xFF008695),
                               ),
                             ),
-                          ),
+                            const SizedBox(height: 40),
+                            Text(
+                              'جارٍ تأكيد العملية...',
+                              style: GoogleFonts.cairo(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 40),
+                              child: Text(
+                                'نحن ننتظر الآن تأكيد البنك الرسمي لتحديث حالة حجزك في ثوانٍ.',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.cairo(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ] else ...[
+                            const Icon(
+                              Icons.warning_amber_rounded,
+                              color: Colors.orange,
+                              size: 64,
+                            ),
+                            const SizedBox(height: 24),
+                            Text(
+                              'نواجه تأخراً في استلام التأكيد',
+                              style: GoogleFonts.cairo(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 40),
+                              child: Text(
+                                'لا تقلق، أموالك بأمان. يمكنك العودة الآن وسيقوم النظام بتحديث حالة حجزك تلقائياً خلال دقائق بمجرد استلام التأكيد الرسمي.',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.cairo(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF008695),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: () {
+                                _paymentSubscription?.cancel();
+                                _bookingSubscription?.cancel();
+                                _verificationTimeoutTimer?.cancel();
+                                Navigator.pop(context); // Close WebView
+                              },
+                              child: Text(
+                                'إغلاق ومتابعة الحجز',
+                                style: GoogleFonts.cairo(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 60),
                           // Security Badge
                           Row(

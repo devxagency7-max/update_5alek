@@ -10,6 +10,8 @@ import '../../home/providers/home_provider.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:motareb/core/services/remote_config_helper.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -19,26 +21,37 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  Future<void>? _sharedPrefsFuture;
+  late SharedPreferences _prefs;
+
   @override
   void initState() {
     super.initState();
+    // 1. Pre-fetch SharedPreferences in parallel
+    _sharedPrefsFuture = SharedPreferences.getInstance().then((prefs) {
+      _prefs = prefs;
+    });
+
+    // 2. Start the check first run flow
     _checkFirstRun();
   }
 
   Future<void> _checkFirstRun() async {
     debugPrint("Splash: Starting navigation check...");
-    // Wait for minimum splash time
-    await Future.delayed(const Duration(seconds: 3));
-
-    if (!mounted) return;
+    
+    // Create a timer for the minimum splash time (3 seconds)
+    final splashTimer = Future.delayed(const Duration(seconds: 3));
 
     try {
-      debugPrint("Splash: Initializing SharedPreferences...");
-      final prefs = await SharedPreferences.getInstance();
-      final bool seenIntro = prefs.getBool('seenIntro') ?? false;
+      debugPrint("Splash: Waiting for SharedPreferences...");
+      await _sharedPrefsFuture;
+      
+      final bool seenIntro = _prefs.getBool('seenIntro') ?? false;
       debugPrint("Splash: seenIntro value: $seenIntro");
 
       if (!seenIntro) {
+        // Wait for the minimum splash screen time before navigating
+        await splashTimer;
         debugPrint("Splash: Navigating to IntroScreen");
         if (!mounted) return;
         Navigator.of(context).pushReplacement(
@@ -55,6 +68,14 @@ class _SplashScreenState extends State<SplashScreen> {
       } else {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
+        // Wait for AuthProvider to finish checking auth status
+        debugPrint("Splash: Checking authentication status...");
+        int authRetry = 0;
+        while (authProvider.isLoading && authRetry < 15) {
+          await Future.delayed(const Duration(milliseconds: 200));
+          authRetry++;
+        }
+
         // Check if user is already logged in
         if (authProvider.isAuthenticated) {
           debugPrint("Splash: User logged in, waiting for home data...");
@@ -66,13 +87,16 @@ class _SplashScreenState extends State<SplashScreen> {
             );
 
             // Wait for data to load if it's still loading
-            // We give it a max of 5 more seconds (on top of the 3s already waited)
+            // We give it a max of 4 more seconds (since it loaded concurrently during splash)
             int retryCount = 0;
-            while (homeProvider.isLoading && retryCount < 10) {
-              await Future.delayed(const Duration(milliseconds: 500));
+            while (homeProvider.isLoading && retryCount < 20) {
+              await Future.delayed(const Duration(milliseconds: 200));
               retryCount++;
             }
           }
+
+          // Ensure the minimum splash time has passed
+          await splashTimer;
 
           debugPrint(
             "Splash: Home data ready or timeout, navigating to HomeScreen.",
@@ -90,6 +114,9 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
           );
         } else {
+          // Ensure the minimum splash time has passed
+          await splashTimer;
+
           debugPrint("Splash: No user logged in, navigating to LoginScreen.");
           if (!mounted) return;
           Navigator.of(context).pushReplacement(
@@ -107,7 +134,8 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     } catch (e) {
       debugPrint("Splash Error: $e");
-      // Fallback: navigation to Intro if everything fails
+      // Fallback: wait for minimum splash time, then navigation to Intro if everything fails
+      await splashTimer;
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -170,7 +198,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     children: [
                       GestureDetector(
                         onTap: () async {
-                          const url = 'https://dev-x-one.vercel.app/';
+                          final url = RemoteConfigHelper.devXOneUrl;
                           final uri = Uri.parse(url);
                           if (await canLaunchUrl(uri)) {
                             await launchUrl(uri);
@@ -198,8 +226,8 @@ class _SplashScreenState extends State<SplashScreen> {
                                 ? 30
                                 : size.width * 0.07,
                             backgroundColor: Colors.transparent,
-                            backgroundImage: const AssetImage(
-                              'assets/images/devx.png',
+                            backgroundImage: CachedNetworkImageProvider(
+                              RemoteConfigHelper.devXLogoUrl,
                             ),
                           ),
                         ),

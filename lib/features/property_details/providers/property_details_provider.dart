@@ -5,7 +5,8 @@ import '../../../../core/models/property_model.dart';
 import 'package:motareb/core/extensions/loc_extension.dart';
 
 class PropertyDetailsProvider extends ChangeNotifier {
-  final Property property;
+  Property _property;
+  Property get property => _property;
 
   // Selected State
   double _selectedPrice = 0.0;
@@ -20,7 +21,7 @@ class PropertyDetailsProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _contactNumbers = [];
   String? _error;
 
-  PropertyDetailsProvider({required this.property}) {
+  PropertyDetailsProvider({required Property property}) : _property = property {
     _init();
     _fetchContactNumbers();
   }
@@ -140,12 +141,12 @@ class PropertyDetailsProvider extends ChangeNotifier {
 
       if (context != null) {
         final List<String> parts = [];
-        roomCounts.forEach((type, count) {
-          final label = _getRoomLabel(context, type, count);
+        roomCounts.forEach((type, cnt) {
+          final label = _getRoomLabel(context, type, cnt);
           parts.add(label);
         });
-        bedCounts.forEach((type, count) {
-          final label = _getBedLabel(context, type, count);
+        bedCounts.forEach((type, cnt) {
+          final label = _getBedLabel(context, type, cnt);
           parts.add(label);
         });
         _selectionLabel = parts.join(' + ');
@@ -154,48 +155,57 @@ class PropertyDetailsProvider extends ChangeNotifier {
       }
     } else {
       _selectedPrice = base;
-      if (context != null) _selectionLabel = context.loc.apartmentPrice;
+      if (context != null) {
+        _selectionLabel = context.loc.apartmentPrice;
+      }
     }
     notifyListeners();
   }
 
-  String _getRoomLabel(BuildContext context, String type, int count) {
+  String _getRoomLabel(BuildContext context, String type, int cnt) {
     String typeLabel = type;
-    if (type == 'Single')
+    if (type == 'Single') {
       typeLabel = context.loc.single;
-    else if (type == 'Double')
+    } else if (type == 'Double') {
       typeLabel = context.loc.double;
-    else if (type == 'Triple')
+    } else if (type == 'Triple') {
       typeLabel = context.loc.triple;
-    else if (type == 'Quadruple')
+    } else if (type == 'Quadruple') {
       typeLabel = context.loc.quadruple;
+    }
 
     if (context.isAr) {
-      if (count == 1) return '${context.loc.room} $typeLabel';
-      if (count == 2) return '${context.loc.room}in $typeLabel';
-      return '$count ${context.loc.rooms} $typeLabel';
+      if (cnt == 1) {
+        return '${context.loc.room} $typeLabel';
+      }
+      if (cnt == 2) {
+        return '${context.loc.room}in $typeLabel';
+      }
+      return '$cnt ${context.loc.rooms} $typeLabel';
     } else {
-      return '$count $typeLabel Room${count > 1 ? 's' : ''}';
+      return '$cnt $typeLabel Room${cnt > 1 ? 's' : ''}';
     }
   }
 
-  String _getBedLabel(BuildContext context, String type, int count) {
+  String _getBedLabel(BuildContext context, String type, int cnt) {
     String typeLabel = type;
-    if (type == 'Single')
+    if (type == 'Single') {
       typeLabel = context.loc.single;
-    else if (type == 'Double')
+    } else if (type == 'Double') {
       typeLabel = context.loc.double;
-    else if (type == 'Triple')
+    } else if (type == 'Triple') {
       typeLabel = context.loc.triple;
-    else if (type == 'Quadruple')
+    } else if (type == 'Quadruple') {
       typeLabel = context.loc.quadruple;
+    }
 
     if (context.isAr) {
-      if (count == 1)
+      if (cnt == 1) {
         return '${context.loc.bed} ${context.loc.in_} ${context.loc.room} $typeLabel';
-      return '$count ${context.loc.beds} ${context.loc.in_} ${context.loc.room} $typeLabel';
+      }
+      return '$cnt ${context.loc.beds} ${context.loc.in_} ${context.loc.room} $typeLabel';
     } else {
-      return '$count Bed${count > 1 ? 's' : ''} in $typeLabel Room';
+      return '$cnt Bed${cnt > 1 ? 's' : ''} in $typeLabel Room';
     }
   }
 
@@ -246,5 +256,30 @@ class PropertyDetailsProvider extends ChangeNotifier {
       return false;
     }
     return true;
+  }
+
+  Future<void> refreshProperty() async {
+    _loadingContacts = true;
+    _error = null;
+    notifyListeners();
+
+    // Re-fetch contact numbers stream
+    _fetchContactNumbers();
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('properties')
+          .doc(_property.id)
+          .get();
+      if (doc.exists && doc.data() != null) {
+        _property = Property.fromMap(doc.data()!, doc.id);
+        _calculatePrice();
+      }
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _loadingContacts = false;
+      notifyListeners();
+    }
   }
 }

@@ -43,9 +43,11 @@ class Property {
   final String? videoUrl;
   final List<Map<String, dynamic>> rooms;
   final double? requiredDeposit; // Added
+  final double? fixedCommission; // Added
   final bool bookingEnabled; // Added
   final String status; // Added
   final List<String> bookedUnits; // Added for partial booking support
+  final bool isHotelApartment;
 
   // Helpers
   List<String> get tags => amenities.map((e) => e.toString()).toList();
@@ -88,9 +90,11 @@ class Property {
     this.bedPrice = 0.0,
     this.generalRoomType,
     this.requiredDeposit,
+    this.fixedCommission,
     this.bookingEnabled = true,
     this.status = 'approved',
     this.bookedUnits = const [],
+    this.isHotelApartment = false,
   });
 
   factory Property.fromMap(Map<String, dynamic> map, String documentId) {
@@ -162,8 +166,10 @@ class Property {
       bedPrice: (map['bedPrice'] as num?)?.toDouble() ?? 0.0,
       generalRoomType: map['generalRoomType'],
       requiredDeposit: (map['requiredDeposit'] as num?)?.toDouble(),
+      fixedCommission: (map['fixedCommission'] as num?)?.toDouble(),
       bookingEnabled: map['bookingEnabled'] ?? true,
       status: map['status'] ?? 'approved',
+      isHotelApartment: map['isHotelApartment'] ?? false,
     );
   }
 
@@ -229,6 +235,108 @@ class Property {
   List<String> localizedNearbyPlaces(BuildContext context) =>
       localizedList(context, nearbyPlaces);
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'titleEn': titleEn,
+        'location': location,
+        'locationEn': locationEn,
+        'price': price,
+        'discountPrice': discountPrice,
+        'imageUrl': imageUrl,
+        'type': type,
+        'isVerified': isVerified,
+        'isNew': isNew,
+        'rating': rating,
+        'amenities': amenities,
+        'rules': rules,
+        'universities': universities,
+        'nearbyPlaces': nearbyPlaces,
+        'featuredLabel': featuredLabel,
+        'featuredLabelEn': featuredLabelEn,
+        'agentName': agentName,
+        'description': description,
+        'descriptionEn': descriptionEn,
+        'governorate': governorate,
+        'gender': gender,
+        'paymentMethods': paymentMethods,
+        'bedsCount': bedsCount,
+        'roomsCount': roomsCount,
+        'bathroomsCount': bathroomsCount,
+        'images': images,
+        'videoUrl': videoUrl,
+        'rooms': rooms,
+        'bookingMode': bookingMode,
+        'isFullApartmentBooking': isFullApartmentBooking,
+        'totalBeds': totalBeds,
+        'apartmentRoomsCount': apartmentRoomsCount,
+        'bedPrice': bedPrice,
+        'generalRoomType': generalRoomType,
+        'requiredDeposit': requiredDeposit,
+        'fixedCommission': fixedCommission,
+        'bookingEnabled': bookingEnabled,
+        'status': status,
+        'bookedUnits': bookedUnits,
+        'isHotelApartment': isHotelApartment,
+      };
+
+  factory Property.fromJson(Map<String, dynamic> json) => Property(
+        id: json['id'] ?? '',
+        title: json['title'] ?? '',
+        titleEn: json['titleEn'] ?? '',
+        location: json['location'] ?? '',
+        locationEn: json['locationEn'] ?? '',
+        price: (json['price'] as num?)?.toDouble() ?? 0.0,
+        discountPrice: (json['discountPrice'] as num?)?.toDouble(),
+        imageUrl: json['imageUrl'] ?? '',
+        type: json['type'] ?? 'شقة',
+        isVerified: json['isVerified'] ?? false,
+        isNew: json['isNew'] ?? false,
+        rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+        amenities: json['amenities'] as List<dynamic>? ?? [],
+        rules: json['rules'] as List<dynamic>? ?? [],
+        universities: json['universities'] as List<dynamic>? ?? [],
+        nearbyPlaces: json['nearbyPlaces'] as List<dynamic>? ?? [],
+        featuredLabel: json['featuredLabel'],
+        featuredLabelEn: json['featuredLabelEn'],
+        agentName: json['agentName'],
+        description: json['description'],
+        descriptionEn: json['descriptionEn'],
+        governorate: json['governorate'],
+        gender: json['gender'],
+        paymentMethods: (json['paymentMethods'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [],
+        bedsCount: (json['bedsCount'] as num?)?.toInt() ?? 0,
+        roomsCount: (json['roomsCount'] as num?)?.toInt() ?? 0,
+        bathroomsCount: (json['bathroomsCount'] as num?)?.toInt() ?? 1,
+        images: (json['images'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [],
+        videoUrl: json['videoUrl'],
+        rooms: (json['rooms'] as List<dynamic>?)
+                ?.map((e) => Map<String, dynamic>.from(e as Map))
+                .toList() ??
+            [],
+        bookingMode: json['bookingMode'] ?? 'unit',
+        isFullApartmentBooking: json['isFullApartmentBooking'] ?? false,
+        totalBeds: (json['totalBeds'] as num?)?.toInt() ?? 0,
+        apartmentRoomsCount: (json['apartmentRoomsCount'] as num?)?.toInt() ?? 0,
+        bedPrice: (json['bedPrice'] as num?)?.toDouble() ?? 0.0,
+        generalRoomType: json['generalRoomType'],
+        requiredDeposit: (json['requiredDeposit'] as num?)?.toDouble(),
+        fixedCommission: (json['fixedCommission'] as num?)?.toDouble(),
+        bookingEnabled: json['bookingEnabled'] ?? true,
+        status: json['status'] ?? 'approved',
+        bookedUnits: (json['bookedUnits'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [],
+        isHotelApartment: json['isHotelApartment'] ?? false,
+      );
+
   bool get hasAC {
     return amenities.any((a) {
       if (a is String) return a.toLowerCase() == 'ac' || a == 'تكييف';
@@ -241,7 +349,7 @@ class Property {
   }
 
   bool get isFullyBooked {
-    if (status == 'sold') return true;
+    if (status == 'sold' || status == 'reserved') return true;
 
     if (bookingMode == 'bed') {
       return bookedUnits.length >= totalBeds;

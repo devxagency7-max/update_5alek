@@ -47,18 +47,25 @@ class PropertyOwner extends StatelessWidget {
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
+                gradient: provider.property.isHotelApartment
+                    ? const LinearGradient(
+                        colors: [Color(0xFFDFBA6B), Color(0xFF9E7D3B)],
+                      )
+                    : AppTheme.primaryGradient,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.phone_in_talk_rounded,
-                color: Colors.white,
+                color: provider.property.isHotelApartment ? Colors.black : Colors.white,
                 size: 25,
               ),
             ),
             title: ShaderMask(
-              shaderCallback: (bounds) =>
-                  AppTheme.primaryGradient.createShader(bounds),
+              shaderCallback: (bounds) => provider.property.isHotelApartment
+                  ? const LinearGradient(
+                      colors: [Color(0xFFDFBA6B), Color(0xFF9E7D3B)],
+                    ).createShader(bounds)
+                  : AppTheme.primaryGradient.createShader(bounds),
               child: Text(
                 context.loc.contactUs,
                 style: GoogleFonts.cairo(
@@ -87,7 +94,7 @@ class PropertyOwner extends StatelessWidget {
               else
                 Column(
                   children: contactNumbers.map((data) {
-                    return _buildContactNumberItem(context, data['number']);
+                    return _buildContactNumberItem(context, data['number'], provider.property.isHotelApartment);
                   }).toList(),
                 ),
             ],
@@ -97,7 +104,7 @@ class PropertyOwner extends StatelessWidget {
     );
   }
 
-  Widget _buildContactNumberItem(BuildContext context, String number) {
+  Widget _buildContactNumberItem(BuildContext context, String number, bool isHotelApartment) {
     return InkWell(
       onTap: () async {
         if (!GuestChecker.check(context)) return;
@@ -136,22 +143,30 @@ class PropertyOwner extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-                  begin: Alignment.centerRight,
-                  end: Alignment.centerLeft,
-                ),
+                gradient: isHotelApartment
+                    ? const LinearGradient(
+                        colors: [Color(0xFFDFBA6B), Color(0xFF9E7D3B)],
+                        begin: Alignment.centerRight,
+                        end: Alignment.centerLeft,
+                      )
+                    : const LinearGradient(
+                        colors: [Color(0xFF39BB5E), Color(0xFF008695)],
+                        begin: Alignment.centerRight,
+                        end: Alignment.centerLeft,
+                      ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF008695).withOpacity(0.3),
+                    color: isHotelApartment
+                        ? const Color(0xFF9E7D3B).withOpacity(0.3)
+                        : const Color(0xFF008695).withOpacity(0.3),
                     blurRadius: 5,
                     offset: const Offset(0, 3),
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.phone_in_talk_rounded,
-                color: Colors.white,
+                color: isHotelApartment ? Colors.black : Colors.white,
                 size: 18,
               ),
             ),

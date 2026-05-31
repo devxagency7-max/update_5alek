@@ -1,31 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:motareb/core/services/remote_config_helper.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:motareb/core/theme/app_theme.dart';
 import 'package:motareb/core/extensions/loc_extension.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
-  const PrivacyPolicyScreen({super.key});
+  final bool isHotelApartment;
+
+  const PrivacyPolicyScreen({
+    super.key,
+    this.isHotelApartment = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF121212)
+          : const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: Text(
           context.loc.privacyPolicy,
           style: GoogleFonts.cairo(
-            color: Colors.white,
+            color: isHotelApartment ? Colors.black : Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.primaryGradient),
+          decoration: BoxDecoration(
+            gradient: isHotelApartment
+                ? const LinearGradient(
+                    colors: [
+                      Color(0xFFF3E5AB),
+                      Color(0xFFDFBA6B),
+                      Color(0xFF9E7D3B),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : AppTheme.primaryGradient,
+          ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: isHotelApartment ? Colors.black : Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -48,11 +72,43 @@ class PrivacyPolicyScreen extends StatelessWidget {
               content: context.loc.websiteContent,
               isDark: isDark,
               onTap: () async {
-                const url = 'https://5lek-oraeb.vercel.app/';
+                final url = RemoteConfigHelper.lekOraebUrl;
                 if (await canLaunchUrl(Uri.parse(url))) {
                   await launchUrl(Uri.parse(url));
                 }
               },
+            ),
+            const SizedBox(height: 20),
+            _buildSectionCard(
+              context,
+              title: context.loc.refundPolicyTitle,
+              icon: Icons.assignment_return_outlined,
+              content: context.loc.refundPolicyContent,
+              isDark: isDark,
+            ),
+            const SizedBox(height: 20),
+            _buildSectionCard(
+              context,
+              title: context.loc.contactInfoTitle,
+              icon: Icons.contact_support_outlined,
+              isDark: isDark,
+              contentWidget: _buildContactInfoContent(context, isDark),
+            ),
+            const SizedBox(height: 20),
+            _buildSectionCard(
+              context,
+              title: context.loc.businessAddressTitle,
+              icon: Icons.business_outlined,
+              content: context.loc.businessAddressContent,
+              isDark: isDark,
+            ),
+            const SizedBox(height: 20),
+            _buildSectionCard(
+              context,
+              title: context.loc.aboutAppTitle,
+              icon: Icons.info_outline,
+              content: context.loc.aboutAppContent,
+              isDark: isDark,
             ),
           ],
         ),
@@ -64,10 +120,15 @@ class PrivacyPolicyScreen extends StatelessWidget {
     BuildContext context, {
     required String title,
     required IconData icon,
-    required String content,
+    String content = '',
+    Widget? contentWidget,
     required bool isDark,
     VoidCallback? onTap,
   }) {
+    final themeColor = isHotelApartment
+        ? const Color(0xFFDFBA6B)
+        : const Color(0xFF39BB5E);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -81,7 +142,10 @@ class PrivacyPolicyScreen extends StatelessWidget {
               ? []
               : [
                   BoxShadow(
-                    color: const Color(0xFF008695).withValues(alpha: 0.1),
+                    color: (isHotelApartment
+                            ? const Color(0xFFDFBA6B)
+                            : const Color(0xFF008695))
+                        .withValues(alpha: 0.1),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -99,12 +163,12 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF39BB5E).withValues(alpha: 0.1),
+                          color: themeColor.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           icon,
-                          color: const Color(0xFF39BB5E),
+                          color: themeColor,
                           size: 24,
                         ),
                       ),
@@ -132,18 +196,69 @@ class PrivacyPolicyScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            Text(
-              content,
-              style: GoogleFonts.cairo(
-                fontSize: 14,
-                height: 1.8,
-                color: isDark ? Colors.grey[300] : Colors.grey[700],
-              ),
-              textAlign: TextAlign.justify,
-            ),
+            contentWidget ??
+                Text(
+                  content,
+                  style: GoogleFonts.cairo(
+                    fontSize: 14,
+                    height: 1.8,
+                    color: isDark ? Colors.grey[300] : Colors.grey[700],
+                  ),
+                  textAlign: TextAlign.justify,
+                ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildContactInfoContent(BuildContext context, bool isDark) {
+    final normalStyle = GoogleFonts.cairo(
+      fontSize: 14,
+      height: 1.8,
+      color: isDark ? Colors.grey[300] : Colors.grey[700],
+    );
+    
+    final accentColor = isHotelApartment
+        ? const Color(0xFFDFBA6B)
+        : const Color(0xFF008695);
+
+    final linkStyle = GoogleFonts.cairo(
+      fontSize: 14,
+      height: 1.8,
+      color: accentColor,
+      fontWeight: FontWeight.bold,
+      decoration: TextDecoration.underline,
+      decorationColor: accentColor,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'إذا كان لديك أي أسئلة أو طلبات استرداد أموال، يرجى التواصل معنا:',
+          style: normalStyle,
+          textAlign: TextAlign.justify,
+        ),
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: () async {
+            final email = RemoteConfigHelper.supportEmail;
+            final uri = Uri.parse('mailto:$email');
+            if (await canLaunchUrl(uri)) await launchUrl(uri);
+          },
+          child: Text(RemoteConfigHelper.supportEmail, style: linkStyle),
+        ),
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: () async {
+            final phone = RemoteConfigHelper.supportPhone;
+            final uri = Uri.parse('tel:$phone');
+            if (await canLaunchUrl(uri)) await launchUrl(uri);
+          },
+          child: Text(RemoteConfigHelper.supportPhone, style: linkStyle),
+        ),
+      ],
     );
   }
 }

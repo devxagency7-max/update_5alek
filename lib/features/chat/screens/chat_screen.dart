@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'report_screen.dart';
 
 // import '../providers/chat_provider.dart';
 // import '../models/message_model.dart';
@@ -124,67 +125,73 @@ class _ChatScreenState extends State<ChatScreen> {
         final messages = snapshot.data ?? [];
         final hasPinnedMessages = messages.any((m) => m.isPinned);
 
-        return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: _buildAppBar(hasPinnedMessages, messages),
-          body: Column(
-            children: [
-              const BannerAdWidget(),
-              Expanded(
-                child: chatProvider.isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : (snapshot.hasError)
-                    ? const Center(child: Text('حدث خطأ'))
-                    : (messages.isEmpty)
-                    ? const Center(child: Text('ابدأ المحادثة مع الدعم الفني'))
-                    : ScrollablePositionedList.builder(
-                        itemScrollController: _itemScrollController,
-                        itemPositionsListener: _itemPositionsListener,
-                        padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                        reverse: true,
-                        itemCount: messages.length,
-                        itemBuilder: (context, index) {
-                          final msg = messages[index];
-                          final currentUserId = context
-                              .read<ChatProvider>()
-                              .currentUserId;
-                          final isMe = msg.senderId == currentUserId;
+        return GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          behavior: HitTestBehavior.opaque,
+          child: Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            appBar: _buildAppBar(hasPinnedMessages, messages),
+            body: Column(
+              children: [
+                const BannerAdWidget(),
+                Expanded(
+                  child: chatProvider.isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : (snapshot.hasError)
+                      ? const Center(child: Text('حدث خطأ'))
+                      : (messages.isEmpty)
+                      ? const Center(
+                          child: Text('ابدأ المحادثة مع الدعم الفني'),
+                        )
+                      : ScrollablePositionedList.builder(
+                          itemScrollController: _itemScrollController,
+                          itemPositionsListener: _itemPositionsListener,
+                          padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                          reverse: true,
+                          itemCount: messages.length,
+                          itemBuilder: (context, index) {
+                            final msg = messages[index];
+                            final currentUserId = context
+                                .read<ChatProvider>()
+                                .currentUserId;
+                            final isMe = msg.senderId == currentUserId;
 
-                          // Date Grouping
-                          bool showDate = false;
-                          if (index == messages.length - 1) {
-                            showDate = true;
-                          } else {
-                            final nextMsg = messages[index + 1];
-                            final currentDay = DateTime(
-                              msg.timestamp.year,
-                              msg.timestamp.month,
-                              msg.timestamp.day,
-                            );
-                            final nextDay = DateTime(
-                              nextMsg.timestamp.year,
-                              nextMsg.timestamp.month,
-                              nextMsg.timestamp.day,
-                            );
-                            if (currentDay != nextDay) {
+                            // Date Grouping
+                            bool showDate = false;
+                            if (index == messages.length - 1) {
                               showDate = true;
+                            } else {
+                              final nextMsg = messages[index + 1];
+                              final currentDay = DateTime(
+                                msg.timestamp.year,
+                                msg.timestamp.month,
+                                msg.timestamp.day,
+                              );
+                              final nextDay = DateTime(
+                                nextMsg.timestamp.year,
+                                nextMsg.timestamp.month,
+                                nextMsg.timestamp.day,
+                              );
+                              if (currentDay != nextDay) {
+                                showDate = true;
+                              }
                             }
-                          }
 
-                          return Column(
-                            children: [
-                              if (showDate) _buildDateHeader(msg.timestamp),
-                              if (msg.type == MessageType.system)
-                                _buildSystemMessage(msg)
-                              else
-                                _buildMessageBubble(context, msg, isMe),
-                            ],
-                          );
-                        },
-                      ),
-              ),
-              _buildInputArea(chatProvider.isLoading),
-            ],
+                            return Column(
+                              children: [
+                                if (showDate) _buildDateHeader(msg.timestamp),
+                                if (msg.type == MessageType.system)
+                                  _buildSystemMessage(msg)
+                                else
+                                  _buildMessageBubble(context, msg, isMe),
+                              ],
+                            );
+                          },
+                        ),
+                ),
+                _buildInputArea(chatProvider.isLoading),
+              ],
+            ),
           ),
         );
       },
@@ -224,6 +231,18 @@ class _ChatScreenState extends State<ChatScreen> {
             onPressed: () => _scrollToNextPinnedMessage(messages),
             tooltip: 'الانتقال للرسائل المثبتة',
           ),
+        IconButton(
+          icon: const Icon(Icons.report_gmailerrorred_outlined, color: Colors.redAccent),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ReportScreen(),
+              ),
+            );
+          },
+          tooltip: 'إرسال بلاغ',
+        ),
       ],
     );
   }

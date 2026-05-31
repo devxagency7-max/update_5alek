@@ -32,14 +32,18 @@ class PropertyCard extends StatelessWidget {
         child: OpenContainer(
           transitionType: ContainerTransitionType.fade,
           transitionDuration: const Duration(milliseconds: 500),
-          closedColor: Theme.of(context).cardTheme.color ?? Colors.white,
+          closedColor: property.isHotelApartment
+              ? (isDark ? const Color(0xFF141416) : Colors.white)
+              : (Theme.of(context).cardTheme.color ?? Colors.white),
           closedElevation: isDark ? 0 : 4,
           openElevation: 0, // Flat during transition
           closedShape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: isDark
-                ? const BorderSide(color: Color(0xFF2A3038))
-                : BorderSide.none,
+            side: property.isHotelApartment
+                ? const BorderSide(color: Color(0xFFDFBA6B), width: 1.5)
+                : (isDark
+                    ? const BorderSide(color: Color(0xFF2A3038))
+                    : BorderSide.none),
           ),
           openBuilder: (context, _) =>
               PropertyDetailsScreen(property: property),
@@ -48,7 +52,9 @@ class PropertyCard extends StatelessWidget {
               width: 206, // Made wider as requested
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
+                color: property.isHotelApartment
+                    ? (isDark ? const Color(0xFF141416) : Colors.white)
+                    : Theme.of(context).cardTheme.color,
                 // Border handled by Shape
                 // Shadow handled by OpenContainer elevation
               ),
@@ -158,6 +164,52 @@ class PropertyCard extends StatelessWidget {
                               ),
                             ),
                           ),
+                          if (property.isHotelApartment)
+                            Positioned(
+                              top: 8,
+                              left: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFFDFBA6B),
+                                      Color(0xFF9E7D3B),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.hotel_rounded,
+                                      color: Colors.black,
+                                      size: 11,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'فندقية ✨',
+                                      style: GoogleFonts.cairo(
+                                        color: Colors.black,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -168,22 +220,31 @@ class PropertyCard extends StatelessWidget {
                     style: GoogleFonts.cairo(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
-                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                      color: property.isHotelApartment
+                          ? (isDark ? const Color(0xFFF9E8B9) : Colors.black)
+                          : Theme.of(context).textTheme.bodyMedium?.color,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     property.localizedLocation(context),
-                    style: GoogleFonts.cairo(fontSize: 10, color: Colors.grey),
+                    style: GoogleFonts.cairo(
+                      fontSize: 10,
+                      color: property.isHotelApartment
+                          ? (isDark ? Colors.grey.shade400 : Colors.grey.shade600)
+                          : Colors.grey,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       ShaderMask(
-                        shaderCallback: (bounds) => const LinearGradient(
-                          colors: [Color(0xFF39BB5E), Color(0xFF008695)],
+                        shaderCallback: (bounds) => LinearGradient(
+                          colors: property.isHotelApartment
+                              ? [const Color(0xFFF3E5AB), const Color(0xFFDFBA6B), const Color(0xFF9E7D3B)]
+                              : [const Color(0xFF39BB5E), const Color(0xFF008695)],
                           begin: Alignment.centerRight,
                           end: Alignment.centerLeft,
                         ).createShader(bounds),

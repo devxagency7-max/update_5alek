@@ -19,8 +19,28 @@ import '../screens/university_properties_screen.dart';
 import 'package:motareb/core/services/ad_service.dart';
 import '../../../utils/guest_checker.dart';
 
-class HomeContent extends StatelessWidget {
+class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
+
+  @override
+  State<HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<HomeContent> {
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialQuery = context.read<HomeProvider>().searchQuery;
+    _searchController = TextEditingController(text: initialQuery);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,59 +48,89 @@ class HomeContent extends StatelessWidget {
     final authProvider = context.watch<AuthProvider>();
     final homeProvider = context.watch<HomeProvider>();
 
+    if (homeProvider.searchQuery.isEmpty && _searchController.text.isNotEmpty) {
+      _searchController.text = '';
+    }
+
     if (homeProvider.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
     final List<String> categoriesList = [
       context.loc.all,
+      context.loc.hotel,
       context.loc.university,
       context.loc.youth,
       context.loc.girls,
       context.loc.bed,
-      context.loc.room,
     ];
 
-    return NotificationListener<ScrollNotification>(
-      onNotification: (ScrollNotification scrollInfo) {
-        if (!homeProvider.isLoadingMore &&
-            scrollInfo.metrics.pixels >=
-                scrollInfo.metrics.maxScrollExtent - 200) {
-          // Trigger earlier
-          context.read<HomeProvider>().loadMoreProperties();
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        if (_searchController.text.isEmpty) {
+          final provider = context.read<HomeProvider>();
+          if (provider.searchQuery.isNotEmpty ||
+              provider.selectedCategoryIndex != 0) {
+            provider.setSearchQuery('');
+            provider.setCategoryIndex(0);
+            provider.resetFilters();
+          }
         }
-        return true;
       },
-      child: CustomScrollView(
-        slivers: [
-          SliverPadding(
-            padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 20,
-              left: 20,
-              right: 20,
-              bottom: 10,
-            ),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _buildHeader(context, authProvider),
-                const SizedBox(height: 20),
-                _buildSearchBar(context),
-                const SizedBox(height: 20),
-                _buildCategories(context, categoriesList),
-                const SizedBox(height: 5),
-              ]),
-            ),
-          ),
-          ..._buildContentSlivers(context, homeProvider),
-          if (homeProvider.isLoadingMore)
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Center(child: CircularProgressIndicator()),
+      behavior: HitTestBehavior.opaque,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification scrollInfo) {
+          if (!homeProvider.isLoadingMore &&
+              scrollInfo.metrics.pixels >=
+                  scrollInfo.metrics.maxScrollExtent - 200) {
+            // Trigger earlier
+            context.read<HomeProvider>().loadMoreProperties();
+          }
+          return true;
+        },
+        child: RefreshIndicator(
+          color: const Color(0xFF008695),
+          onRefresh: () async {
+            await context.read<HomeProvider>().refreshProperties();
+          },
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top + 20,
+                  left: 20,
+                  right: 20,
+                  bottom: 10,
+                ),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    _buildHeader(context, authProvider),
+                    const SizedBox(height: 20),
+                    _buildSearchBar(context),
+                    const SizedBox(height: 20),
+                    _buildCategories(context, categoriesList),
+                    const SizedBox(height: 5),
+                  ]),
+                ),
               ),
-            ),
-          const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
-        ],
+              ..._buildContentSlivers(context, homeProvider),
+              if (homeProvider.isLoadingMore)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                ),
+              SliverPadding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).padding.bottom + 130,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -125,9 +175,10 @@ class HomeContent extends StatelessWidget {
 
     bool isEmptySearchResult = false;
     if (isSearchActive) {
-      if (selectedIndex == 1 && homeProvider.uniqueUniversities.isEmpty) {
+      if (selectedIndex == 2 && homeProvider.uniqueUniversities.isEmpty) {
         isEmptySearchResult = true;
-      } else if (selectedIndex > 1 && homeProvider.filteredByCategory.isEmpty) {
+      } else if ((selectedIndex == 1 || selectedIndex > 2) &&
+          homeProvider.filteredByCategory.isEmpty) {
         isEmptySearchResult = true;
       } else if (selectedIndex == 0 &&
           homeProvider.featuredProperties.isEmpty &&
@@ -165,8 +216,14 @@ class HomeContent extends StatelessWidget {
       ];
     }
 
-    // 1. University View
+    // 1. Hotel View
     if (selectedIndex == 1) {
+      final filtered = homeProvider.filteredByCategory;
+      return _buildFilteredListSlivers(context, filtered);
+    }
+
+    // 2. University View
+    if (selectedIndex == 2) {
       final universities = homeProvider.uniqueUniversities;
 
       if (universities.isEmpty) {
@@ -220,8 +277,8 @@ class HomeContent extends StatelessWidget {
       ];
     }
 
-    // 2. Filtered View (Youth, Girls, Bed, Room)
-    if (selectedIndex > 1) {
+    // 3. Filtered View (Youth, Girls, Bed)
+    if (selectedIndex > 2) {
       final filtered = homeProvider.filteredByCategory;
       return _buildFilteredListSlivers(context, filtered);
     }
@@ -385,9 +442,11 @@ class HomeContent extends StatelessWidget {
               children: [
                 Expanded(
                   child: TextField(
+                    controller: _searchController,
                     textAlign: TextAlign.right,
                     onChanged: (value) {
                       context.read<HomeProvider>().setSearchQuery(value);
+                      setState(() {});
                     },
                     decoration: InputDecoration(
                       hintText: context.loc.searchHint,
@@ -397,6 +456,24 @@ class HomeContent extends StatelessWidget {
                       ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(
+                                Icons.clear_rounded,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () {
+                                _searchController.clear();
+                                context.read<HomeProvider>().setSearchQuery('');
+                                context.read<HomeProvider>().setCategoryIndex(
+                                  0,
+                                );
+                                context.read<HomeProvider>().resetFilters();
+                                FocusScope.of(context).unfocus();
+                                setState(() {});
+                              },
+                            )
+                          : null,
                     ),
                   ),
                 ),
@@ -405,26 +482,30 @@ class HomeContent extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        // Search Button with Gradient Design (Moved from inside search bar)
-        Container(
-          height: 50,
-          width: 50,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-              begin: Alignment.centerRight,
-              end: Alignment.centerLeft,
-            ),
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF008695).withValues(alpha: 0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
+        GestureDetector(
+          onTap: () {
+            FocusScope.of(context).unfocus();
+          },
+          child: Container(
+            height: 50,
+            width: 50,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF39BB5E), Color(0xFF008695)],
+                begin: Alignment.centerRight,
+                end: Alignment.centerLeft,
               ),
-            ],
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF008695).withValues(alpha: 0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.search_rounded, color: Colors.white),
           ),
-          child: const Icon(Icons.search_rounded, color: Colors.white),
         ),
       ],
     );
@@ -524,8 +605,9 @@ class HomeContent extends StatelessWidget {
         }
 
         final propertyIndex = adjustedIndex - (adjustedIndex ~/ 6);
-        if (propertyIndex < 0 || propertyIndex >= properties.length)
+        if (propertyIndex < 0 || propertyIndex >= properties.length) {
           return const SizedBox.shrink();
+        }
 
         final property = properties[propertyIndex];
         final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -541,14 +623,18 @@ class HomeContent extends StatelessWidget {
               child: OpenContainer(
                 transitionType: ContainerTransitionType.fade,
                 transitionDuration: const Duration(milliseconds: 500),
-                closedColor: Theme.of(context).cardTheme.color ?? Colors.white,
+                closedColor: property.isHotelApartment
+                    ? (isDark ? const Color(0xFF141416) : Colors.white)
+                    : (Theme.of(context).cardTheme.color ?? Colors.white),
                 closedElevation: isDark ? 0 : 2,
                 openElevation: 0,
                 closedShape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
-                  side: isDark
-                      ? BorderSide(color: Theme.of(context).dividerColor)
-                      : BorderSide.none,
+                  side: property.isHotelApartment
+                      ? const BorderSide(color: Color(0xFFDFBA6B), width: 1.5)
+                      : (isDark
+                            ? BorderSide(color: Theme.of(context).dividerColor)
+                            : BorderSide.none),
                 ),
                 openBuilder: (context, _) =>
                     PropertyDetailsScreen(property: property),
@@ -556,7 +642,9 @@ class HomeContent extends StatelessWidget {
                   return Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
+                      color: property.isHotelApartment
+                          ? (isDark ? const Color(0xFF141416) : Colors.white)
+                          : Theme.of(context).cardTheme.color,
                     ),
                     child: Row(
                       children: [
@@ -594,7 +682,43 @@ class HomeContent extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (property.isNew)
+                              if (property.isHotelApartment)
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Color(0xFFDFBA6B),
+                                        Color(0xFF9E7D3B),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.hotel_rounded,
+                                        size: 10,
+                                        color: Colors.black,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'شقة فندقية ✨',
+                                        style: GoogleFonts.cairo(
+                                          color: Colors.black,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              else if (property.isNew)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 6,
@@ -617,9 +741,13 @@ class HomeContent extends StatelessWidget {
                                 style: GoogleFonts.cairo(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
-                                  color: Theme.of(
-                                    context,
-                                  ).textTheme.bodyLarge?.color,
+                                  color: property.isHotelApartment
+                                      ? (isDark
+                                            ? const Color(0xFFF9E8B9)
+                                            : Colors.black)
+                                      : Theme.of(
+                                          context,
+                                        ).textTheme.bodyLarge?.color,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -629,7 +757,11 @@ class HomeContent extends StatelessWidget {
                                 property.localizedLocation(context),
                                 style: GoogleFonts.cairo(
                                   fontSize: 10,
-                                  color: Colors.grey,
+                                  color: property.isHotelApartment
+                                      ? (isDark
+                                            ? Colors.grey.shade400
+                                            : Colors.grey.shade600)
+                                      : Colors.grey,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -639,8 +771,17 @@ class HomeContent extends StatelessWidget {
                           ),
                         ),
                         ShaderMask(
-                          shaderCallback: (bounds) => const LinearGradient(
-                            colors: [Color(0xFF39BB5E), Color(0xFF008695)],
+                          shaderCallback: (bounds) => LinearGradient(
+                            colors: property.isHotelApartment
+                                ? [
+                                    const Color(0xFFF3E5AB),
+                                    const Color(0xFFDFBA6B),
+                                    const Color(0xFF9E7D3B),
+                                  ]
+                                : [
+                                    const Color(0xFF39BB5E),
+                                    const Color(0xFF008695),
+                                  ],
                             begin: Alignment.centerRight,
                             end: Alignment.centerLeft,
                           ).createShader(bounds),
@@ -757,6 +898,9 @@ class _HomeCategoriesState extends State<_HomeCategories> {
                   .watch<HomeProvider>()
                   .selectedCategoryIndex;
               final isSelected = index == selectedCategoryIndex;
+              final isDark = Theme.of(context).brightness == Brightness.dark;
+              final isHotel = index == 1; // "فندقي"
+
               return GestureDetector(
                 onTap: () =>
                     context.read<HomeProvider>().setCategoryIndex(index),
@@ -767,33 +911,95 @@ class _HomeCategoriesState extends State<_HomeCategories> {
                   ),
                   decoration: BoxDecoration(
                     gradient: isSelected
-                        ? const LinearGradient(
-                            colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-                            begin: Alignment.centerRight,
-                            end: Alignment.centerLeft,
-                          )
+                        ? (isHotel
+                              ? const LinearGradient(
+                                  colors: [
+                                    Color(0xFFF3E5AB),
+                                    Color(0xFFDFBA6B),
+                                    Color(0xFF9E7D3B),
+                                  ],
+                                  begin: Alignment.centerRight,
+                                  end: Alignment.centerLeft,
+                                )
+                              : const LinearGradient(
+                                  colors: [
+                                    Color(0xFF39BB5E),
+                                    Color(0xFF008695),
+                                  ],
+                                  begin: Alignment.centerRight,
+                                  end: Alignment.centerLeft,
+                                ))
                         : null,
                     color: isSelected
                         ? null
-                        : Theme.of(context).cardTheme.color,
+                        : (isHotel
+                              ? (isDark
+                                    ? const Color(0xFF141416)
+                                    : Colors.white)
+                              : Theme.of(context).cardTheme.color),
                     borderRadius: BorderRadius.circular(20),
                     border: isSelected
                         ? null
-                        : Border.all(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? Theme.of(context).dividerColor
-                                : Colors.grey.shade200,
-                          ),
+                        : (isHotel
+                              ? Border.all(
+                                  color: const Color(0xFFDFBA6B),
+                                  width: 1.5,
+                                )
+                              : Border.all(
+                                  color: isDark
+                                      ? Theme.of(context).dividerColor
+                                      : Colors.grey.shade200,
+                                )),
+                    boxShadow: isHotel
+                        ? [
+                            BoxShadow(
+                              color: const Color(
+                                0xFFDFBA6B,
+                              ).withValues(alpha: isSelected ? 0.4 : 0.1),
+                              blurRadius: isSelected ? 10 : 4,
+                              spreadRadius: isSelected ? 1 : 0,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : (isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFF39BB5E,
+                                    ).withValues(alpha: 0.2),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ]
+                              : null),
                   ),
-                  child: Text(
-                    widget.categories[index],
-                    style: GoogleFonts.cairo(
-                      color: isSelected
-                          ? Colors.white
-                          : Theme.of(context).textTheme.bodyMedium?.color,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isHotel) ...[
+                        Icon(
+                          Icons.hotel_rounded,
+                          size: 15,
+                          color: isSelected
+                              ? Colors.black
+                              : const Color(0xFFDFBA6B),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Text(
+                        widget.categories[index],
+                        style: GoogleFonts.cairo(
+                          color: isSelected
+                              ? (isHotel ? Colors.black : Colors.white)
+                              : (isHotel
+                                    ? const Color(0xFFDFBA6B)
+                                    : Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.color),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );

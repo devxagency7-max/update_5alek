@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:motareb/core/services/ads_controller.dart';
+import 'package:motareb/core/services/remote_config_helper.dart';
 import 'package:motareb/core/services/ad_service.dart';
 import 'package:motareb/l10n/app_localizations.dart';
 
@@ -24,6 +25,9 @@ final RouteObserver<ModalRoute<void>> routeObserver =
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Load Remote Config Local Cache from SharedPreferences
+  await RemoteConfigHelper.loadLocalCache();
+
   // 1. Initialize Firebase
   await Firebase.initializeApp();
 
@@ -44,8 +48,12 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(
           create: (_) => AuthProvider()..checkAuthStatus(),
+          lazy: false,
         ),
-        ChangeNotifierProvider(create: (_) => HomeProvider()),
+        ChangeNotifierProvider(
+          create: (_) => HomeProvider(),
+          lazy: false,
+        ),
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
         ChangeNotifierProxyProvider<AuthProvider, ChatProvider>(
           create: (context) => ChatProvider(context.read<AuthProvider>()),

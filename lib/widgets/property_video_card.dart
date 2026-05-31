@@ -19,7 +19,8 @@ class PropertyVideoCard extends StatefulWidget {
   State<PropertyVideoCard> createState() => _PropertyVideoCardState();
 }
 
-class _PropertyVideoCardState extends State<PropertyVideoCard> with RouteAware {
+class _PropertyVideoCardState extends State<PropertyVideoCard>
+    with RouteAware, WidgetsBindingObserver {
   late VideoPlayerController _videoPlayerController;
   ChewieController? _chewieController;
   bool _isLoading = true;
@@ -38,7 +39,17 @@ class _PropertyVideoCardState extends State<PropertyVideoCard> with RouteAware {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializePlayer();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _videoPlayerController.pause();
+      _chewieController?.pause();
+    }
   }
 
   Future<void> _initializePlayer() async {
@@ -93,6 +104,7 @@ class _PropertyVideoCardState extends State<PropertyVideoCard> with RouteAware {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     routeObserver.unsubscribe(this);
     _videoPlayerController.dispose();
     _chewieController?.dispose();
@@ -103,13 +115,13 @@ class _PropertyVideoCardState extends State<PropertyVideoCard> with RouteAware {
   void didPushNext() {
     // Called when a new route is pushed on top of this one (user leaves page)
     _videoPlayerController.pause();
+    _chewieController?.pause();
   }
 
   @override
   void didPopNext() {
     // Called when the top route has been popped off, and this route shows up
-    // Optional: we can choose to auto-play or stay paused.
-    // Keeping it paused is usually better UX unless autoPlay was true.
+    // Keep paused unless user explicitly plays
   }
 
   @override

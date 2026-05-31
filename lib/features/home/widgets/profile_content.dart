@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:motareb/core/providers/theme_provider.dart';
 import 'package:motareb/core/providers/locale_provider.dart';
 import 'package:motareb/core/extensions/loc_extension.dart';
+import 'package:motareb/core/services/remote_config_helper.dart';
 
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
@@ -322,6 +323,23 @@ class _ProfileContentState extends State<ProfileContent> {
                               _showLogoutConfirmation(context, authProvider),
                         ),
 
+                      if (authProvider.isAuthenticated && !authProvider.isGuest)
+                        _buildProfileMenuItem(
+                          context.loc.deleteAccount,
+                          Icons.delete_forever_outlined,
+                          isDestructive: true,
+                          delay: 150,
+                          onTap: () =>
+                              _showDeleteAccountConfirmation(context, authProvider),
+                        ),
+
+                      // Privacy Contact Card
+                      FadeInUp(
+                        duration: const Duration(milliseconds: 600),
+                        child: _buildPrivacyContactCard(context, isDark),
+                      ),
+                      const SizedBox(height: 20),
+
                       const SizedBox(height: 40),
 
                       // 5. Large Footer Logo
@@ -340,7 +358,7 @@ class _ProfileContentState extends State<ProfileContent> {
                             const SizedBox(height: 15),
                             GestureDetector(
                               onTap: () async {
-                                const url = 'https://dev-x-one.vercel.app/';
+                                final url = RemoteConfigHelper.devXOneUrl;
                                 if (await canLaunchUrl(Uri.parse(url))) {
                                   await launchUrl(Uri.parse(url));
                                 }
@@ -362,13 +380,13 @@ class _ProfileContentState extends State<ProfileContent> {
                                           ),
                                         ],
                                 ),
-                                child: const CircleAvatar(
-                                  radius: 60,
-                                  backgroundColor: Colors.transparent,
-                                  backgroundImage: AssetImage(
-                                    'assets/images/devx.png',
-                                  ),
-                                ),
+                                 child: CircleAvatar(
+                                   radius: 60,
+                                   backgroundColor: Colors.transparent,
+                                   backgroundImage: CachedNetworkImageProvider(
+                                     RemoteConfigHelper.devXLogoUrl,
+                                   ),
+                                 ),
                               ),
                             ),
                           ],
@@ -387,6 +405,134 @@ class _ProfileContentState extends State<ProfileContent> {
           left: 0,
           right: 0,
           child: SafeArea(top: false, child: BannerAdWidget()),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPrivacyContactCard(BuildContext context, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        border: isDark ? Border.all(color: AppTheme.darkBorder) : null,
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: const Color(0xFF008695).withValues(alpha: 0.05),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const PrivacyPolicyScreen()),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: AppTheme.primaryGradient,
+                  ),
+                  child: const Icon(
+                    Icons.privacy_tip_outlined,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    context.loc.privacyPolicy,
+                    style: GoogleFonts.cairo(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 14,
+                  color: Colors.grey,
+                ),
+              ],
+            ),
+          ),
+          Divider(
+            color: isDark ? AppTheme.darkBorder : Colors.grey.shade200,
+            height: 24,
+          ),
+          _buildContactInfoRow(
+            icon: Icons.location_on_outlined,
+            text: 'بني سويف، مصر',
+            isDark: isDark,
+          ),
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: () async {
+              final email = RemoteConfigHelper.supportEmail;
+              final uri = Uri.parse('mailto:$email');
+              if (await canLaunchUrl(uri)) await launchUrl(uri);
+            },
+            child: _buildContactInfoRow(
+              icon: Icons.email_outlined,
+              text: RemoteConfigHelper.supportEmail,
+              isDark: isDark,
+            ),
+          ),
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: () async {
+              final phone = RemoteConfigHelper.supportPhone;
+              final uri = Uri.parse('tel:$phone');
+              if (await canLaunchUrl(uri)) await launchUrl(uri);
+            },
+            child: _buildContactInfoRow(
+              icon: Icons.phone_outlined,
+              text: RemoteConfigHelper.supportPhone,
+              isDark: isDark,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactInfoRow({
+    required IconData icon,
+    required String text,
+    required bool isDark,
+  }) {
+    return Row(
+      children: [
+        ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [Color(0xFF39BB5E), Color(0xFF008695)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ).createShader(bounds),
+          child: Icon(icon, color: Colors.white, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            text,
+            style: GoogleFonts.cairo(
+              fontSize: 14,
+              color: isDark ? const Color(0xFF9CA3AF) : Colors.black87,
+            ),
+          ),
         ),
       ],
     );
@@ -763,6 +909,142 @@ class _ProfileContentState extends State<ProfileContent> {
                       ),
                       child: Text(
                         context.loc.logout,
+                        style: GoogleFonts.cairo(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(dialogContext),
+                      child: Text(
+                        context.loc.cancel,
+                        style: GoogleFonts.cairo(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showDeleteAccountConfirmation(
+    BuildContext context,
+    AuthProvider authProvider,
+  ) async {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Theme.of(dialogContext).scaffoldBackgroundColor,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.delete_forever, size: 40, color: Colors.red),
+              ),
+              const SizedBox(height: 15),
+              Text(
+                context.loc.deleteAccountTitle,
+                style: GoogleFonts.cairo(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(dialogContext).textTheme.bodyLarge?.color,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                context.loc.deleteAccountConfirmation,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.cairo(
+                  fontSize: 14,
+                  color: Theme.of(dialogContext).textTheme.bodyMedium?.color,
+                ),
+              ),
+              const SizedBox(height: 25),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        // Close confirmation dialog
+                        Navigator.pop(dialogContext);
+
+                        // Show loading dialog using parent context
+                        if (context.mounted) {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) => const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF39BB5E),
+                              ),
+                            ),
+                          );
+                        }
+
+                        try {
+                          // Perform delete account
+                          await authProvider.deleteAccount();
+
+                          if (context.mounted) {
+                            // removing loading dialog
+                            Navigator.of(context).pop();
+
+                            // Show success message
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(context.loc.deleteAccountSuccess),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+
+                            // Navigate to Splash or Login Screen
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (_) => const LoginScreen(),
+                              ),
+                              (route) => false,
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            // removing loading dialog
+                            Navigator.of(context).pop();
+
+                            // Show error message
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(context.loc.deleteAccountError),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: Text(
+                        context.loc.delete,
                         style: GoogleFonts.cairo(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,

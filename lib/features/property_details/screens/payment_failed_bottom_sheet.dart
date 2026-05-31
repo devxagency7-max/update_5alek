@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class PaymentFailedBottomSheet extends StatelessWidget {
+  final String? paymentMethod;
   final VoidCallback onRetry;
   final VoidCallback onSupport;
 
   const PaymentFailedBottomSheet({
     super.key,
+    this.paymentMethod,
     required this.onRetry,
     required this.onSupport,
   });
@@ -30,7 +32,9 @@ class PaymentFailedBottomSheet extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'لم نتمكن من إتمام العملية. يرجى التحقق من بيانات البطاقة أو المحاولة مرة أخرى.',
+            paymentMethod == 'wallet'
+                ? 'لم نتمكن من إتمام العملية. يرجى التأكد من وجود رصيد كافٍ في محفظتك وكتابة الرقم السري الصحيح.'
+                : 'لم نتمكن من إتمام العملية. يرجى التحقق من بيانات البطاقة أو المحاولة مرة أخرى.',
             style: GoogleFonts.cairo(fontSize: 14, color: Colors.grey[600]),
             textAlign: TextAlign.center,
           ),

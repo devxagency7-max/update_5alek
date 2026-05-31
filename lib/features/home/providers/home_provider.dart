@@ -1,18 +1,22 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/models/property_model.dart';
 import '../../../core/services/properties_service.dart';
 
 class HomeProvider extends ChangeNotifier {
   final PropertiesService _propertiesService = PropertiesService();
-  StreamSubscription? _propertiesSubscription;
+
+  static const _cacheKey = 'cached_properties';
 
   // Data State
   List<Property> _allProperties = [];
+  DocumentSnapshot? _lastDocument;
   bool _isLoading = true;
   bool _isLoadingMore = false;
   String? _error;
-  int _currentLimit = 10;
   bool _hasMore = true;
 
   // UI State
@@ -33,54 +37,101 @@ class HomeProvider extends ChangeNotifier {
   }
 
   void _loadProperties() {
-    _isLoading = true;
-    notifyListeners();
-
-    _subscribeToStream();
+    loadInitialProperties();
   }
 
-  void _subscribeToStream() {
-    _propertiesSubscription?.cancel();
-    _propertiesSubscription = _propertiesService
-        .getPropertiesStream(limit: _currentLimit)
-        .listen(
-          (properties) {
-            _allProperties = properties;
-            _isLoading = false;
-            _isLoadingMore = false;
+  Future<void> loadInitialProperties() async {
+    _isLoading = true;
+    _error = null;
+    _hasMore = true;
+    _lastDocument = null;
+    notifyListeners();
 
-            // Simple check: if we got less than requested limit, end reached
-            _hasMore = properties.length >= _currentLimit;
+    // Load from cache first for fast UI startup
+    await _loadFromCache();
 
-            notifyListeners();
-          },
-          onError: (e) {
-            _error = e.toString();
-            _isLoading = false;
-            _isLoadingMore = false;
-            notifyListeners();
-          },
-        );
+    try {
+      final snapshot = await _propertiesService.getPropertiesPage(limit: 10);
+      final properties = snapshot.docs.map((doc) {
+        return Property.fromMap(doc.data(), doc.id);
+      }).toList();
+
+      _allProperties = properties;
+      if (snapshot.docs.isNotEmpty) {
+        _lastDocument = snapshot.docs.last;
+      }
+      _hasMore = properties.length >= 10;
+      _isLoading = false;
+      notifyListeners();
+
+      // Save first page to cache
+      await _saveToCache(properties);
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _loadFromCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cached = prefs.getString(_cacheKey);
+      if (cached != null) {
+        final List decoded = jsonDecode(cached);
+        _allProperties = decoded
+            .map((e) => Property.fromJson(e as Map<String, dynamic>))
+            .toList();
+        _isLoading = false;
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveToCache(List<Property> properties) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _cacheKey,
+        jsonEncode(properties.map((p) => p.toJson()).toList()),
+      );
+    } catch (_) {}
   }
 
   Future<void> loadMoreProperties() async {
     if (_isLoadingMore || !_hasMore) return;
 
     _isLoadingMore = true;
-    _currentLimit += 10;
+    _error = null;
     notifyListeners();
 
-    // Re-subscribe with higher limit
-    // Note: In real production with huge data, using cursors (startAfter)
-    // and manual state list management is better to avoid reading N documents again.
-    // But for < 1000 items, increasing limit on stream is acceptable and keeps realtime sync simpler.
-    _subscribeToStream();
+    try {
+      final snapshot = await _propertiesService.getPropertiesPage(
+        limit: 10,
+        startAfter: _lastDocument,
+      );
+
+      final properties = snapshot.docs.map((doc) {
+        return Property.fromMap(doc.data(), doc.id);
+      }).toList();
+
+      if (properties.isNotEmpty) {
+        _allProperties.addAll(properties);
+        _lastDocument = snapshot.docs.last;
+      }
+      _hasMore = properties.length >= 10;
+      _isLoadingMore = false;
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      _isLoadingMore = false;
+      notifyListeners();
+    }
   }
 
-  @override
-  void dispose() {
-    _propertiesSubscription?.cancel();
-    super.dispose();
+  Future<void> refreshProperties() async {
+    resetFilters();
+    await loadInitialProperties();
   }
 
   // Navigation
@@ -100,7 +151,7 @@ class HomeProvider extends ChangeNotifier {
 
   // Business Logic: Filtering & Sorting
   String _searchQuery = '';
-  RangeValues _priceRange = const RangeValues(0, 10000);
+  RangeValues _priceRange = const RangeValues(0, 100000);
   List<String> _filterHousingTypes = [];
   List<String> _filterGenders = [];
 
@@ -126,25 +177,33 @@ class HomeProvider extends ChangeNotifier {
   }
 
   void resetFilters() {
-    _priceRange = const RangeValues(0, 10000);
+    _priceRange = const RangeValues(0, 100000);
     _filterHousingTypes = [];
     _filterGenders = [];
     _searchQuery = '';
     notifyListeners();
   }
 
+  List<Property> _sortHotelFirst(List<Property> list) {
+    final hotels = list.where((p) => p.isHotelApartment).toList();
+    final others = list.where((p) => !p.isHotelApartment).toList();
+    return [...hotels, ...others];
+  }
+
   List<Property> get filteredProperties {
-    return _applyFullFilters(_allProperties);
+    return _sortHotelFirst(_applyFullFilters(_allProperties));
   }
 
   List<Property> get featuredProperties {
     var list = _applySearchOnly(_allProperties);
     final featured = list.where((p) => p.rating >= 4.5).toList();
-    return featured.isNotEmpty ? featured : list.take(5).toList();
+    return _sortHotelFirst(
+      featured.isNotEmpty ? featured : list.take(5).toList(),
+    );
   }
 
   List<Property> get recentProperties {
-    return _applySearchOnly(_allProperties);
+    return _sortHotelFirst(_applySearchOnly(_allProperties));
   }
 
   // Used for Home Screen: Only applies Text Search
@@ -169,10 +228,18 @@ class HomeProvider extends ChangeNotifier {
         return t.toString().toLowerCase().contains(query);
       });
 
+      final hotelMatches =
+          p.isHotelApartment &&
+          (query.contains('فندق') ||
+              query.contains('hotel') ||
+              query.contains('فندقيه') ||
+              query.contains('فندقية'));
+
       return p.title.toLowerCase().contains(query) ||
           p.location.toLowerCase().contains(query) ||
           universityMatches ||
-          tagMatches;
+          tagMatches ||
+          hotelMatches;
     }).toList();
   }
 
@@ -182,11 +249,37 @@ class HomeProvider extends ChangeNotifier {
       // 1. Search Query
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
+        final universityMatches = p.universities.any((u) {
+          if (u is Map) {
+            return (u['ar']?.toString().toLowerCase().contains(query) ??
+                    false) ||
+                (u['en']?.toString().toLowerCase().contains(query) ?? false);
+          }
+          return u.toString().toLowerCase().contains(query);
+        });
+
+        final tagMatches = p.amenities.any((t) {
+          if (t is Map) {
+            return (t['ar']?.toString().toLowerCase().contains(query) ??
+                    false) ||
+                (t['en']?.toString().toLowerCase().contains(query) ?? false);
+          }
+          return t.toString().toLowerCase().contains(query);
+        });
+
+        final hotelMatches =
+            p.isHotelApartment &&
+            (query.contains('فندق') ||
+                query.contains('hotel') ||
+                query.contains('فندقيه') ||
+                query.contains('فندقية'));
+
         final matchesSearch =
             p.title.toLowerCase().contains(query) ||
             p.location.toLowerCase().contains(query) ||
-            p.universities.any((u) => u.toLowerCase().contains(query)) ||
-            p.tags.any((t) => t.toLowerCase().contains(query));
+            universityMatches ||
+            tagMatches ||
+            hotelMatches;
         if (!matchesSearch) return false;
       }
 
@@ -213,14 +306,17 @@ class HomeProvider extends ChangeNotifier {
         // You might need to adjust these strings based on your actual data
         for (var type in _filterHousingTypes) {
           if (type == 'Bed' &&
-              (p.type.contains('سرير') || p.bookingMode == 'bed'))
+              (p.type.contains('سرير') || p.bookingMode == 'bed')) {
             matchesType = true;
+          }
           if (type == 'Apartment' &&
-              (p.type.contains('شقة') || p.isFullApartmentBooking))
+              (p.type.contains('شقة') || p.isFullApartmentBooking)) {
             matchesType = true;
+          }
           if (type == 'Room' &&
-              (p.type.contains('غرفة') || p.generalRoomType != null))
+              (p.type.contains('غرفة') || p.generalRoomType != null)) {
             matchesType = true;
+          }
         }
         if (!matchesType) return false;
       }
@@ -236,22 +332,26 @@ class HomeProvider extends ChangeNotifier {
             (propGender == 'male' ||
                 propGender == 'both' ||
                 p.tags.contains('شباب') ||
-                p.tags.contains('ذكور')))
+                p.tags.contains('ذكور'))) {
           matchesGender = true;
+        }
         if (_filterGenders.contains('Female') &&
             (propGender == 'female' ||
                 propGender == 'both' ||
                 p.tags.contains('بنات') ||
-                p.tags.contains('إناث')))
+                p.tags.contains('إناث'))) {
           matchesGender = true;
+        }
         // If property has no gender specified, deciding whether to show it.
         // Usually assume mixed or show all? strictly filtering:
         if (propGender == null && !matchesGender) {
           // Check headers/tags if not in gender field
-          if (_filterGenders.contains('Male') && p.title.contains('شباب'))
+          if (_filterGenders.contains('Male') && p.title.contains('شباب')) {
             matchesGender = true;
-          if (_filterGenders.contains('Female') && p.title.contains('بنات'))
+          }
+          if (_filterGenders.contains('Female') && p.title.contains('بنات')) {
             matchesGender = true;
+          }
         }
 
         if (!matchesGender) return false;
@@ -276,18 +376,40 @@ class HomeProvider extends ChangeNotifier {
   }
 
   List<Property> getPropertiesForUniversity(String universityName) {
-    return _applySearchOnly(_allProperties).where((p) {
+    final list = _applySearchOnly(_allProperties).where((p) {
       return p.universities.any((u) {
         if (u is Map) return u['ar'] == universityName;
         return u.toString() == universityName;
       });
     }).toList();
+    return _sortHotelFirst(list);
   }
 
-  // Deprecated usage of category index filter, consider removing if moving fully to new filter system
-  // Keeping it for backward compatibility but making it use the new filter logic if needed OR just ignore it
   List<Property> get filteredByCategory {
-    // If using new filters, return filteredProperties
-    return _applySearchOnly(_allProperties);
+    final base = _applySearchOnly(_allProperties);
+    switch (_selectedCategoryIndex) {
+      case 1: // فندقي
+        return base.where((p) => p.isHotelApartment).toList();
+      case 3: // شباب
+        return base.where((p) {
+          final g = p.gender?.toLowerCase();
+          return g == 'male' ||
+              p.tags.contains('شباب') ||
+              p.tags.contains('ذكور');
+        }).toList();
+      case 4: // بنات
+        return base.where((p) {
+          final g = p.gender?.toLowerCase();
+          return g == 'female' ||
+              p.tags.contains('بنات') ||
+              p.tags.contains('إناث');
+        }).toList();
+      case 5: // سرير
+        return base
+            .where((p) => p.type == 'سرير' || p.bookingMode == 'bed')
+            .toList();
+      default:
+        return _sortHotelFirst(base);
+    }
   }
 }

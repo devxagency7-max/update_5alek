@@ -12,6 +12,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../../chat/providers/chat_provider.dart';
 import '../../chat/models/message_model.dart';
+import '../../chat/screens/report_screen.dart';
 import '../../../core/widgets/ads/banner_ad_widget.dart';
 import 'package:motareb/core/extensions/loc_extension.dart';
 
@@ -118,8 +119,11 @@ class _ChatContentState extends State<ChatContent> {
         final messages = snapshot.data ?? [];
         final hasPinnedMessages = messages.any((m) => m.isPinned);
 
-        return Column(
-          children: [
+        return GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          behavior: HitTestBehavior.opaque,
+          child: Column(
+            children: [
             // Header
             Container(
               padding: EdgeInsets.only(
@@ -191,7 +195,7 @@ class _ChatContentState extends State<ChatContent> {
                       ],
                     ),
                   ),
-                  if (hasPinnedMessages)
+                  if (hasPinnedMessages) ...[
                     IconButton(
                       icon: const Icon(
                         Icons.push_pin,
@@ -203,6 +207,26 @@ class _ChatContentState extends State<ChatContent> {
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
+                    const SizedBox(width: 15),
+                  ],
+                  IconButton(
+                    icon: const Icon(
+                      Icons.report_gmailerrorred_outlined,
+                      color: Colors.redAccent,
+                      size: 24,
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ReportScreen(),
+                        ),
+                      );
+                    },
+                    tooltip: context.loc.sendReport,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
                 ],
               ),
             ),
@@ -297,10 +321,11 @@ class _ChatContentState extends State<ChatContent> {
             // Input Area
             _buildInputArea(chatProvider.isLoading),
           ],
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   Widget _buildDateHeader(DateTime date) {
     return Container(
@@ -520,9 +545,17 @@ class _ChatContentState extends State<ChatContent> {
 
   Widget _buildInputArea(bool isLoading) {
     return Container(
-      padding: const EdgeInsets.all(15),
+      padding: EdgeInsets.only(
+        left: 15,
+        right: 15,
+        top: 15,
+        bottom: 15 + 65 + 20 + MediaQuery.of(context).padding.bottom,
+      ),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
+        color: Color.alphaBlend(
+          Colors.black.withValues(alpha: 0.2),
+          Theme.of(context).cardTheme.color ?? Colors.white,
+        ),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(30),
           topRight: Radius.circular(30),

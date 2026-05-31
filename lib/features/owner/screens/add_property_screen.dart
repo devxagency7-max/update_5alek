@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/extensions/loc_extension.dart';
 import '../../../core/services/r2_upload_service.dart';
+import '../../../core/services/remote_config_helper.dart';
 
 class AddPropertyScreen extends StatefulWidget {
   const AddPropertyScreen({super.key});
@@ -193,11 +194,14 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
 
   Future<void> _submitProperty() async {
     // Validation
-    if (_phoneController.text.trim().isEmpty ||
+    final phoneEmpty = RemoteConfigHelper.showPhoneField && _phoneController.text.trim().isEmpty;
+    if (phoneEmpty ||
         _detailsController.text.trim().isEmpty ||
         _priceController.text.trim().isEmpty) {
       _showSnackBar(
-        'الرجاء إدخال رقم الهاتف، السعر، وتفاصيل الشقة',
+        RemoteConfigHelper.showPhoneField
+            ? 'الرجاء إدخال رقم الهاتف، السعر، وتفاصيل الشقة'
+            : 'الرجاء إدخال السعر وتفاصيل الشقة',
         isError: true,
       );
       return;
@@ -277,70 +281,76 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'إضافة عقار جديد',
-          style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      behavior: HitTestBehavior.opaque,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: Text(
+            'إضافة عقار جديد',
+            style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: FadeInUp(
-                  duration: const Duration(milliseconds: 600),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSectionTitle('الوسائط (صور وفيديو)'),
-                      const SizedBox(height: 10),
-                      _buildImagePicker(),
-                      const SizedBox(height: 15),
-                      _buildVideoPicker(),
-                      const SizedBox(height: 25),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: FadeInUp(
+                    duration: const Duration(milliseconds: 600),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionTitle('الوسائط (صور وفيديو)'),
+                        const SizedBox(height: 10),
+                        _buildImagePicker(),
+                        const SizedBox(height: 15),
+                        _buildVideoPicker(),
+                        const SizedBox(height: 25),
 
-                      _buildSectionTitle('المعلومات الأساسية'),
-                      const SizedBox(height: 15),
-                      _buildTextField(
-                        _phoneController,
-                        'رقم التواصل (فون)',
-                        Icons.phone_rounded,
-                        keyboardType: TextInputType.phone,
-                      ),
-                      const SizedBox(height: 15),
-                      _buildTextField(
-                        _priceController,
-                        'السعر المطلوب (ج.م)',
-                        Icons.attach_money_rounded,
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 15),
-                      _buildTextField(
-                        _detailsController,
-                        'تفاصيل الشقة',
-                        Icons.description_rounded,
-                        minLines: 3,
-                        maxLines: null,
-                      ),
-                      const SizedBox(height: 100), // Space for bottom button
-                    ],
+                        _buildSectionTitle('المعلومات الأساسية'),
+                        const SizedBox(height: 15),
+                        if (RemoteConfigHelper.showPhoneField) ...[
+                          _buildTextField(
+                            _phoneController,
+                            'رقم التواصل (فون)',
+                            Icons.phone_rounded,
+                            keyboardType: TextInputType.phone,
+                          ),
+                          const SizedBox(height: 15),
+                        ],
+                        _buildTextField(
+                          _priceController,
+                          'السعر المطلوب (ج.م)',
+                          Icons.attach_money_rounded,
+                          keyboardType: TextInputType.number,
+                        ),
+                        const SizedBox(height: 15),
+                        _buildTextField(
+                          _detailsController,
+                          'تفاصيل الشقة',
+                          Icons.description_rounded,
+                          minLines: 3,
+                          maxLines: null,
+                        ),
+                        const SizedBox(height: 100), // Space for bottom button
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            _buildSubmitButton(),
-          ],
+              _buildSubmitButton(),
+            ],
+          ),
         ),
       ),
     );

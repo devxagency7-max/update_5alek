@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:motareb/core/extensions/loc_extension.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../auth/screens/login_screen.dart';
 
 class IntroScreen extends StatefulWidget {
@@ -216,12 +217,17 @@ class _IntroScreenState extends State<IntroScreen> {
   }
 
   Future<void> _navigateToHome() async {
+    if (!mounted) return;
+    _showReferralBottomSheet();
+  }
+
+  Future<void> _performNavigationToLogin() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('seenIntro', true);
 
     if (!mounted) return;
 
-    Navigator.of(context).pushReplacement(
+    Navigator.of(context).pushAndRemoveUntil(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
             const LoginScreen(),
@@ -242,6 +248,185 @@ class _IntroScreenState extends State<IntroScreen> {
         },
         transitionDuration: const Duration(milliseconds: 800), // Smooth 0.8s
       ),
+      (route) => false,
+    );
+  }
+
+  void _showReferralBottomSheet() {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final List<Map<String, dynamic>> options = [
+          {
+            'key': 'facebook',
+            'labelAr': 'فيسبوك',
+            'icon': Icons.facebook,
+            'color': const Color(0xFF1877F2),
+          },
+          {
+            'key': 'tiktok',
+            'labelAr': 'تيك توك',
+            'icon': Icons.music_note_rounded,
+            'color': isDark ? Colors.white : Colors.black,
+          },
+          {
+            'key': 'instagram',
+            'labelAr': 'انستجرام',
+            'icon': Icons.camera_alt_rounded,
+            'color': const Color(0xFFE1306C),
+          },
+          {
+            'key': 'friend',
+            'labelAr': 'صديق أو زميل',
+            'icon': Icons.people_rounded,
+            'color': Colors.indigo,
+          },
+          {
+            'key': 'banners',
+            'labelAr': 'إعلانات الشارع واللافتات',
+            'icon': Icons.campaign_rounded,
+            'color': Colors.orange,
+          },
+          {
+            'key': 'other',
+            'labelAr': 'مصادر أخرى / أخرى',
+            'icon': Icons.devices_other_rounded,
+            'color': Colors.blueGrey,
+          },
+        ];
+
+        return PopScope(
+          canPop: false, // Prevent dismissing
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1A1F26) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 20,
+                  offset: const Offset(0, -5),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 50,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey[800] : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                const SizedBox(height: 25),
+                Text(
+                  'سؤال سريع 💡',
+                  style: GoogleFonts.cairo(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF008695),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'من أين عرفت تطبيق مغترب؟',
+                  style: GoogleFonts.cairo(
+                    fontSize: 14,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 25),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: options.length,
+                  itemBuilder: (context, index) {
+                    final opt = options[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: InkWell(
+                        onTap: () async {
+                          // Save selection to Firestore
+                          try {
+                            await FirebaseFirestore.instance
+                                .collection('referrals')
+                                .add({
+                              'source': opt['key'],
+                              'sourceAr': opt['labelAr'],
+                              'createdAt': FieldValue.serverTimestamp(),
+                            });
+                          } catch (e) {
+                            // Suppress error so user is never blocked
+                          }
+                          _performNavigationToLogin(); // Go to LoginScreen and clear stack
+                        },
+                        borderRadius: BorderRadius.circular(15),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 16),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: isDark
+                                  ? const Color(0xFF2C323D)
+                                  : Colors.grey.shade200,
+                            ),
+                            borderRadius: BorderRadius.circular(15),
+                            color: isDark
+                                ? const Color(0xFF232933)
+                                : Colors.grey.shade50,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: (opt['color'] as Color).withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  opt['icon'] as IconData,
+                                  color: opt['color'] as Color,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 15),
+                              Expanded(
+                                child: Text(
+                                  opt['labelAr'] as String,
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : Colors.black87,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 14,
+                                color: isDark ? Colors.grey[700] : Colors.grey[400],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

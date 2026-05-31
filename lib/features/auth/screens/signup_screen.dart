@@ -13,6 +13,7 @@ import '../../home/screens/home_screen.dart';
 import '../widgets/user_type_dialog.dart';
 import 'package:flutter/gestures.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:motareb/core/services/remote_config_helper.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -142,27 +143,30 @@ class _SignupScreenState extends State<SignupScreen> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Scrollable Layout as requested
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      extendBodyBehindAppBar: true, // Allow background to go behind AppBar
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: isDark ? Colors.white70 : Colors.teal,
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      behavior: HitTestBehavior.opaque,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        extendBodyBehindAppBar: true, // Allow background to go behind AppBar
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios,
+              color: isDark ? Colors.white70 : Colors.teal,
+            ),
+            onPressed: () => Navigator.pop(context),
           ),
-          onPressed: () => Navigator.pop(context),
         ),
-      ),
-      body: Stack(
-        children: [
-          // Background: Light Green Semi-Circle Top-Right
-          Positioned(
-            top: -100,
-            right: -100,
-            child: Container(
+        body: Stack(
+          children: [
+            // Background: Light Green Semi-Circle Top-Right
+            Positioned(
+              top: -100,
+              right: -100,
+              child: Container(
               width: 300,
               height: 300,
               decoration: BoxDecoration(
@@ -586,8 +590,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                   ),
                                   recognizer: TapGestureRecognizer()
                                     ..onTap = () async {
-                                      const url =
-                                          'https://5lek-oraeb.vercel.app/';
+                                      final url = RemoteConfigHelper.lekOraebUrl;
                                       if (await canLaunchUrl(Uri.parse(url))) {
                                         await launchUrl(Uri.parse(url));
                                       }
@@ -602,8 +605,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                   ),
                                   recognizer: TapGestureRecognizer()
                                     ..onTap = () async {
-                                      const url =
-                                          'https://5lek-oraeb.vercel.app/';
+                                      final url = RemoteConfigHelper.lekOraebUrl;
                                       if (await canLaunchUrl(Uri.parse(url))) {
                                         await launchUrl(Uri.parse(url));
                                       }
@@ -715,8 +717,9 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildGoogleButton(bool isDark) {
     return FadeInUp(

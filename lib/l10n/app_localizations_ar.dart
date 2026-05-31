@@ -465,6 +465,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get all => 'الكل';
 
   @override
+  String get hotel => 'فندقية';
+
+  @override
   String get university => 'جامعة';
 
   @override
@@ -805,7 +808,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get bookApartmentFull => 'حجز الشقة بالكامل';
+  String get bookApartmentFull => 'حجز  بالكامل';
 
   @override
   String get includesComponents => 'يشمل جميع الغرف والمرافق';
@@ -881,6 +884,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get booked => 'تم الحجز';
+
+  @override
+  String get sold => 'مباع';
 
   @override
   String get idVerificationTitle => 'تأكيد الهوية (مطلوب)';
@@ -996,4 +1002,97 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get websiteContent =>
       'لمزيد من المعلومات والتفاصيل، يمكنكم زيارة موقعنا الإلكتروني.';
+
+  @override
+  String get refundPolicyTitle => 'سياسة الاسترجاع';
+
+  @override
+  String get refundPolicyContent =>
+      'يحق للمستخدمين المطالبة باسترداد الأموال خلال 7 أيام إذا لم يتم تقديم الخدمة المدفوعة أو تفعيلها.\n\nتتم مراجعة طلبات استرداد الأموال بواسطة فريق دعم خليك قريب.\n\nإذا تمت الموافقة على طلب استرداد الأموال، سيتم إرجاع المبلغ إلى طريقة الدفع الأصلية خلال 3-7 أيام عمل.\n\nلا يحق طلب استرداد الأموال إذا تم تسليم الخدمة أو استخدامها بالفعل.\n\nلطلبات استرداد الأموال، يرجى التواصل معنا عبر البريد الإلكتروني.';
+
+  @override
+  String get contactInfoTitle => 'معلومات التواصل';
+
+  @override
+  String get contactInfoContent =>
+      'إذا كان لديك أي أسئلة أو طلبات استرداد أموال، يرجى التواصل معنا:\n\nالبريد الإلكتروني: devx.agency7@gmail.com\nرقم الهاتف: 01026064819';
+
+  @override
+  String get businessAddressTitle => 'عنوان النشاط';
+
+  @override
+  String get businessAddressContent => 'خليك قريب\nالقاهرة، مصر';
+
+  @override
+  String get aboutAppTitle => 'عن خليك قريب';
+
+  @override
+  String get aboutAppContent =>
+      'خليك قريب هي منصة تساعد طلاب الجامعات في إيجاد سكن ومساكن للإيجار بالقرب منهم في جميع أنحاء مصر.\n\nتقوم المنصة بربط الطلاب بأصحاب العقارات لتسهيل عملية البحث عن سكن.';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'أدخل بريدك الإلكتروني المسجل وسنرسل لك رابطاً آمناً لإعادة تعيين كلمة المرور.';
+
+  @override
+  String get sendResetLink => 'إرسال رابط التعيين';
+
+  @override
+  String get resetEmailSent => 'تم إرسال رابط إعادة تعيين كلمة المرور بنجاح!';
+
+  @override
+  String get noInboxSupportPrefix =>
+      'لو بريدك الإلكتروني لا يمتلك صندوق وارد (Inbox) لتلقي الرسائل، تقدر ';
+
+  @override
+  String get contactUsAction => 'تتواصل معانا';
+
+  @override
+  String get noInboxSupportSuffix => ' مباشرة لنساعدك في تغيير كلمة مرورك.';
+
+  @override
+  String get deleteAccount => 'حذف الحساب';
+
+  @override
+  String get deleteAccountTitle => 'تأكيد حذف الحساب';
+
+  @override
+  String get deleteAccountConfirmation =>
+      'هل أنت متأكد من رغبتك في حذف حسابك نهائياً؟ هذا الإجراء لا يمكن التراجع عنه وسيتم مسح جميع بياناتك وحجوزاتك بالكامل.';
+
+  @override
+  String get deleteAccountSuccess => 'تم حذف الحساب بنجاح.';
+
+  @override
+  String get deleteAccountError =>
+      'حدث خطأ أثناء حذف الحساب. قد تحتاج إلى تسجيل الخروج والولوج مجدداً لحماية بياناتك ثم المحاولة مرة أخرى.';
+
+  @override
+  String get sendReport => 'إرسال بلاغ';
+
+  @override
+  String get reportEmptyError => 'يرجى كتابة تفاصيل البلاغ';
+
+  @override
+  String get reportSuccess => 'تم إرسال البلاغ بنجاح';
+
+  @override
+  String get reportSendError =>
+      'حدث خطأ أثناء إرسال البلاغ، يرجى المحاولة مرة أخرى';
+
+  @override
+  String get reportIssueTitle => 'إرسال بلاغ أو شكوى';
+
+  @override
+  String get reportIssueSubtitle =>
+      'إذا واجهت أي مشكلة أو كان لديك شكوى، يرجى إرسال تفاصيلها وسيقوم فريق الدعم الفني بالرد عليك في أقرب وقت.';
+
+  @override
+  String get reportDetailsLabel => 'تفاصيل الشكوى أو البلاغ';
+
+  @override
+  String get reportHintText => 'اكتب هنا تفاصيل المشكلة أو البلاغ بالتفصيل...';
+
+  @override
+  String get submitReportButton => 'إرسال البلاغ';
 }

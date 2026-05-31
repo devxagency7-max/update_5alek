@@ -27,6 +27,32 @@ class PropertiesService {
         });
   }
 
+  Future<QuerySnapshot<Map<String, dynamic>>> getPropertiesPage({
+    int limit = 10,
+    DocumentSnapshot? startAfter,
+  }) async {
+    Query<Map<String, dynamic>> query = _firestore
+        .collection('properties')
+        .where(
+          'status',
+          whereIn: [
+            'approved',
+            'available',
+            'reserved',
+            'sold',
+            'paying_remaining',
+          ],
+        )
+        .orderBy('createdAt', descending: true)
+        .limit(limit);
+
+    if (startAfter != null) {
+      query = query.startAfterDocument(startAfter);
+    }
+
+    return await query.get();
+  }
+
   Future<List<Property>> getFeaturedProperties() async {
     // Logic for featured properties (e.g., highly rated or specific flag)
     // For now, returning top rated

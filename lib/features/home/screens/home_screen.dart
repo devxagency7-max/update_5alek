@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -70,13 +71,79 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-            // Dynamic Content Body with Padding
+            // Dynamic Content Body
             Positioned.fill(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: 65 + 20 + MediaQuery.of(context).padding.bottom + 10,
+              child: _buildBody(homeProvider.selectedIndex),
+            ),
+
+            // Gradient haze — layer 1: outermost, lightest
+            Positioned(
+              bottom: 20 + MediaQuery.of(context).padding.bottom - 20,
+              left: 2,
+              right: 2,
+              height: 105,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(52),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 0.5, sigmaY: 0.5),
+                  child: Container(color: Colors.transparent),
                 ),
-                child: _buildBody(homeProvider.selectedIndex),
+              ),
+            ),
+            // Gradient haze — layer 2
+            Positioned(
+              bottom: 20 + MediaQuery.of(context).padding.bottom - 14,
+              left: 7,
+              right: 7,
+              height: 93,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(47),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
+                  child: Container(color: Colors.transparent),
+                ),
+              ),
+            ),
+            // Gradient haze — layer 3
+            Positioned(
+              bottom: 20 + MediaQuery.of(context).padding.bottom - 9,
+              left: 12,
+              right: 12,
+              height: 83,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(43),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 1.5, sigmaY: 1.5),
+                  child: Container(color: Colors.transparent),
+                ),
+              ),
+            ),
+            // Gradient haze — layer 4
+            Positioned(
+              bottom: 20 + MediaQuery.of(context).padding.bottom - 5,
+              left: 16,
+              right: 16,
+              height: 75,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(40),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                  child: Container(color: Colors.transparent),
+                ),
+              ),
+            ),
+            // Gradient haze — layer 5: innermost, strongest
+            Positioned(
+              bottom: 20 + MediaQuery.of(context).padding.bottom - 2,
+              left: 19,
+              right: 19,
+              height: 69,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(37),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                  child: Container(color: Colors.transparent),
+                ),
               ),
             ),
 

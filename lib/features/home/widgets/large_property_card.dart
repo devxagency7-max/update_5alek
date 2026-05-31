@@ -33,21 +33,27 @@ class LargePropertyCard extends StatelessWidget {
           child: OpenContainer(
             transitionType: ContainerTransitionType.fade,
             transitionDuration: const Duration(milliseconds: 500),
-            closedColor: Theme.of(context).cardTheme.color ?? Colors.white,
+            closedColor: property.isHotelApartment
+                ? (isDark ? const Color(0xFF141416) : Colors.white)
+                : (Theme.of(context).cardTheme.color ?? Colors.white),
             closedElevation: isDark ? 0 : 4,
             openElevation: 0,
             closedShape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              side: isDark
-                  ? BorderSide(color: const Color(0xFF2A3038))
-                  : BorderSide.none,
+              side: property.isHotelApartment
+                  ? const BorderSide(color: Color(0xFFDFBA6B), width: 1.5)
+                  : (isDark
+                      ? const BorderSide(color: Color(0xFF2A3038))
+                      : BorderSide.none),
             ),
             openBuilder: (context, _) =>
                 PropertyDetailsScreen(property: property),
             closedBuilder: (context, openContainer) {
               return Container(
                 decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
+                  color: property.isHotelApartment
+                      ? (isDark ? const Color(0xFF141416) : Colors.white)
+                      : Theme.of(context).cardTheme.color,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,7 +103,52 @@ class LargePropertyCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (property.isVerified)
+                        if (property.isHotelApartment)
+                          Positioned(
+                            top: 15,
+                            left: 15,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFFDFBA6B),
+                                    Color(0xFF9E7D3B),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.hotel_rounded,
+                                    color: Colors.black,
+                                    size: 14,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    property.isVerified ? 'فندقية موثقة ✨' : 'شقة فندقية فاخرة ✨',
+                                    style: GoogleFonts.cairo(
+                                      color: Colors.black,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else if (property.isVerified)
                           Positioned(
                             top: 15,
                             left: 15,
@@ -169,14 +220,23 @@ class LargePropertyCard extends StatelessWidget {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF39BB5E),
-                                      Color(0xFF008695),
-                                    ],
-                                    begin: Alignment.centerRight,
-                                    end: Alignment.centerLeft,
-                                  ),
+                                  gradient: property.isHotelApartment
+                                      ? const LinearGradient(
+                                          colors: [
+                                            Color(0xFFDFBA6B),
+                                            Color(0xFF9E7D3B),
+                                          ],
+                                          begin: Alignment.centerRight,
+                                          end: Alignment.centerLeft,
+                                        )
+                                      : const LinearGradient(
+                                          colors: [
+                                            Color(0xFF39BB5E),
+                                            Color(0xFF008695),
+                                          ],
+                                          begin: Alignment.centerRight,
+                                          end: Alignment.centerLeft,
+                                        ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -186,7 +246,7 @@ class LargePropertyCard extends StatelessWidget {
                                             ? context.loc.bed
                                             : context.loc.divided),
                                   style: GoogleFonts.cairo(
-                                    color: Colors.white,
+                                    color: property.isHotelApartment ? Colors.black : Colors.white,
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -236,11 +296,10 @@ class LargePropertyCard extends StatelessWidget {
                             children: [
                               ShaderMask(
                                 shaderCallback: (bounds) =>
-                                    const LinearGradient(
-                                      colors: [
-                                        Color(0xFF39BB5E),
-                                        Color(0xFF008695),
-                                      ],
+                                    LinearGradient(
+                                      colors: property.isHotelApartment
+                                          ? [const Color(0xFFF3E5AB), const Color(0xFFDFBA6B), const Color(0xFF9E7D3B)]
+                                          : [const Color(0xFF39BB5E), const Color(0xFF008695)],
                                       begin: Alignment.centerRight,
                                       end: Alignment.centerLeft,
                                     ).createShader(bounds),
@@ -261,28 +320,32 @@ class LargePropertyCard extends StatelessWidget {
                             style: GoogleFonts.cairo(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(
-                                context,
-                              ).textTheme.bodyLarge?.color,
+                              color: property.isHotelApartment
+                                  ? (isDark ? const Color(0xFFF9E8B9) : Colors.black)
+                                  : Theme.of(context).textTheme.bodyLarge?.color,
                             ),
                           ),
                           const SizedBox(height: 5),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Padding(
-                                padding: EdgeInsets.only(top: 2),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
                                 child: Icon(
                                   Icons.location_on_outlined,
                                   size: 16,
-                                  color: Colors.grey,
+                                  color: property.isHotelApartment ? const Color(0xFFDFBA6B) : Colors.grey,
                                 ),
                               ),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   property.localizedLocation(context),
-                                  style: GoogleFonts.cairo(color: Colors.grey),
+                                  style: GoogleFonts.cairo(
+                                    color: property.isHotelApartment
+                                        ? (isDark ? Colors.grey.shade400 : Colors.grey.shade600)
+                                        : Colors.grey,
+                                  ),
                                 ),
                               ),
                             ],

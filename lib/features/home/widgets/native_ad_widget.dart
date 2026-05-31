@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:motareb/core/services/ad_service.dart';
@@ -49,9 +48,7 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
   }
 
   void _loadAdManual() {
-    final String adUnitId = Platform.isAndroid
-        ? 'ca-app-pub-3940256099942544/2247696110'
-        : 'ca-app-pub-3940256099942544/3986624511';
+    final String adUnitId = AdsController.nativeAdUnitId;
 
     _nativeAd = NativeAd(
       adUnitId: adUnitId,

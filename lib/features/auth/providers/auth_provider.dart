@@ -191,6 +191,49 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> deleteAccount() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _authService.deleteAccount();
+      _user = null;
+      _userData = null;
+      _isAdmin = false;
+      _isOwner = false;
+    } catch (e) {
+      if (e is FirebaseAuthException) {
+        _errorMessage = e.message;
+      } else {
+        _errorMessage = e.toString();
+      }
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _authService.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      if (e is FirebaseAuthException) {
+        _errorMessage = e.message;
+      } else {
+        _errorMessage = e.toString();
+      }
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   void clearError() {
     _errorMessage = null;
     notifyListeners();

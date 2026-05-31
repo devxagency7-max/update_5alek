@@ -1,12 +1,17 @@
 import 'dart:ui';
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:motareb/core/services/remote_config_helper.dart';
 
 import 'package:motareb/core/extensions/loc_extension.dart';
 
 import 'signup_screen.dart';
+import 'forgot_password_screen.dart';
 import '../../home/screens/home_screen.dart';
+import '../../home/screens/privacy_policy_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../../../utils/custom_snackbar.dart';
@@ -127,122 +132,136 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
-          // Background UI
-          _buildBackgroundDecorations(isDark),
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      behavior: HitTestBehavior.opaque,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Stack(
+          children: [
+            // Background UI
+            _buildBackgroundDecorations(isDark),
 
-          BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-            child: Container(color: Colors.transparent),
-          ),
+            BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+              child: Container(color: Colors.transparent),
+            ),
 
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Spacer(flex: 2),
+            SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight - 32.0,
+                      ),
+                      child: IntrinsicHeight(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const SizedBox(height: 10),
 
-                  // Logo
-                  FadeInDown(
-                    delay: const Duration(milliseconds: 200),
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        child: Image.asset(
-                          'assets/images/logo.png',
-                          height: 120,
+                            // Logo
+                            FadeInDown(
+                              delay: const Duration(milliseconds: 200),
+                              child: Center(
+                                child: Image.asset(
+                                  'assets/images/logo.png',
+                                  height: 110,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 15),
+
+                            // Title
+                            FadeInDown(
+                              delay: const Duration(milliseconds: 300),
+                              child: ShaderMask(
+                                shaderCallback: (bounds) => const LinearGradient(
+                                  colors: [Color(0xFF39BB5E), Color(0xFF008695)],
+                                  begin: Alignment.centerRight,
+                                  end: Alignment.centerLeft,
+                                ).createShader(bounds),
+                                child: Text(
+                                  context.loc.welcomeBack,
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 6),
+                            FadeInDown(
+                              delay: const Duration(milliseconds: 400),
+                              child: Text(
+                                context.loc.loginToContinue,
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.cairo(
+                                  fontSize: 13,
+                                  color: isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600],
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 25),
+
+                            // Fields
+                            FadeInUp(
+                              delay: const Duration(milliseconds: 500),
+                              child: Form(
+                                key: _formKey,
+                                child: Column(
+                                  children: [
+                                    _buildEmailField(isDark),
+                                    const SizedBox(height: 16),
+                                    _buildPasswordField(isDark),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 8),
+                            _buildForgotPasswordButton(),
+
+                            const SizedBox(height: 20),
+
+                            // Login Button
+                            _buildLoginButton(),
+
+                            const SizedBox(height: 16),
+
+                            // Google Button
+                            _buildGoogleButton(isDark),
+
+                            const SizedBox(height: 12),
+
+                            // Guest Button
+                            _buildGuestButton(isDark),
+
+                            const Spacer(),
+                            const SizedBox(height: 30),
+
+                            // Signup Link
+                            _buildSignupLink(isDark),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-
-                  // Title
-                  FadeInDown(
-                    delay: const Duration(milliseconds: 300),
-                    child: ShaderMask(
-                      shaderCallback: (bounds) => const LinearGradient(
-                        colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-                        begin: Alignment.centerRight,
-                        end: Alignment.centerLeft,
-                      ).createShader(bounds),
-                      child: Text(
-                        context.loc.welcomeBack,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.cairo(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-                  FadeInDown(
-                    delay: const Duration(milliseconds: 400),
-                    child: Text(
-                      context.loc.loginToContinue,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                    ),
-                  ),
-
-                  const Spacer(flex: 1),
-
-                  // Fields
-                  FadeInUp(
-                    delay: const Duration(milliseconds: 500),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          _buildEmailField(isDark),
-                          const SizedBox(height: 20),
-                          _buildPasswordField(isDark),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-                  _buildForgotPasswordButton(),
-
-                  const SizedBox(height: 20),
-
-                  // Login Button
-                  _buildLoginButton(),
-
-                  const SizedBox(height: 30),
-
-                  // Google Button
-                  _buildGoogleButton(isDark),
-
-                  const SizedBox(height: 15),
-
-                  // Guest Button
-                  _buildGuestButton(isDark),
-
-                  const Spacer(flex: 2),
-
-                  // Signup Link
-                  _buildSignupLink(isDark),
-
-                  const Spacer(flex: 1),
-                ],
+                  );
+                },
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -285,16 +304,21 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildEmailField(bool isDark) {
     return TextFormField(
       controller: _emailController,
-      style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+      style: GoogleFonts.cairo(
+        color: isDark ? Colors.white : Colors.black87,
+        fontSize: 14,
+      ),
       keyboardType: TextInputType.emailAddress,
       validator: (value) =>
           (value == null || value.isEmpty) ? context.loc.enterEmail : null,
       decoration: InputDecoration(
         hintText: 'example@mail.com',
-        hintStyle: TextStyle(
+        hintStyle: GoogleFonts.cairo(
           color: isDark ? Colors.grey[500] : Colors.grey[400],
+          fontSize: 13,
         ),
-        prefixIcon: const Icon(Icons.email_outlined, color: Colors.teal),
+        prefixIcon: const Icon(Icons.email_outlined, color: Colors.teal, size: 20),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         filled: true,
         fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[50],
         border: OutlineInputBorder(
@@ -325,24 +349,30 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildPasswordField(bool isDark) {
     return TextFormField(
       controller: _passwordController,
-      style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+      style: GoogleFonts.cairo(
+        color: isDark ? Colors.white : Colors.black87,
+        fontSize: 14,
+      ),
       obscureText: !_isPasswordVisible,
       validator: (value) =>
           (value == null || value.isEmpty) ? context.loc.enterPassword : null,
       decoration: InputDecoration(
-        hintText: '........',
-        hintStyle: TextStyle(
+        hintText: '••••••••',
+        hintStyle: GoogleFonts.cairo(
           color: isDark ? Colors.grey[500] : Colors.grey[400],
+          fontSize: 13,
         ),
-        prefixIcon: const Icon(Icons.lock_outline, color: Colors.teal),
+        prefixIcon: const Icon(Icons.lock_outline, color: Colors.teal, size: 20),
         suffixIcon: IconButton(
           icon: Icon(
             _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
             color: Colors.grey,
+            size: 20,
           ),
           onPressed: () =>
               setState(() => _isPasswordVisible = !_isPasswordVisible),
         ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         filled: true,
         fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[50],
         border: OutlineInputBorder(
@@ -376,12 +406,39 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Align(
         alignment: Alignment.centerRight,
         child: TextButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) => const ForgotPasswordScreen(),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  const begin = Offset(1.0, 0.0); // انزلاق جانبي من اليمين لليسار
+                  const end = Offset.zero;
+                  const curve = Curves.easeInOut;
+
+                  var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                  var offsetAnimation = animation.drive(tween);
+
+                  return SlideTransition(
+                    position: offsetAnimation,
+                    child: child,
+                  );
+                },
+                transitionDuration: const Duration(milliseconds: 350),
+              ),
+            );
+          },
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
           child: Text(
             context.loc.forgotPassword,
-            style: const TextStyle(
+            style: GoogleFonts.cairo(
               color: Colors.teal,
               fontWeight: FontWeight.bold,
+              fontSize: 12,
             ),
           ),
         ),
@@ -394,7 +451,7 @@ class _LoginScreenState extends State<LoginScreen> {
       delay: const Duration(milliseconds: 700),
       child: Container(
         width: double.infinity,
-        height: 55,
+        height: 52,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFF39BB5E), Color(0xFF008695)],
@@ -428,9 +485,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ? const CircularProgressIndicator(color: Colors.white)
                   : Text(
                       context.loc.loginAction,
-                      style: const TextStyle(
+                      style: GoogleFonts.cairo(
                         color: Colors.white,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -446,7 +503,7 @@ class _LoginScreenState extends State<LoginScreen> {
       delay: const Duration(milliseconds: 800),
       child: Container(
         width: double.infinity,
-        height: 55,
+        height: 52,
         decoration: BoxDecoration(
           color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
           borderRadius: BorderRadius.circular(15),
@@ -473,12 +530,12 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('assets/images/google.png', height: 40, width: 40),
-                const SizedBox(width: 15),
+                Image.asset('assets/images/google.png', height: 32, width: 32),
+                const SizedBox(width: 12),
                 Text(
                   context.loc.continueWithGoogle,
                   style: GoogleFonts.cairo(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : Colors.black87,
                   ),
@@ -496,7 +553,7 @@ class _LoginScreenState extends State<LoginScreen> {
       delay: const Duration(milliseconds: 850),
       child: Container(
         width: double.infinity,
-        height: 55,
+        height: 52,
         decoration: BoxDecoration(
           color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
           borderRadius: BorderRadius.circular(15),
@@ -523,12 +580,12 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.person_outline, color: Colors.teal, size: 24),
-                const SizedBox(width: 15),
+                const Icon(Icons.person_outline, color: Colors.teal, size: 22),
+                const SizedBox(width: 12),
                 Text(
                   context.loc.continueAsGuest,
                   style: GoogleFonts.cairo(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : Colors.black87,
                   ),
@@ -544,27 +601,135 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildSignupLink(bool isDark) {
     return FadeInUp(
       delay: const Duration(milliseconds: 900),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            context.loc.noAccount,
-            style: TextStyle(color: isDark ? Colors.grey[400] : Colors.black87),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SignupScreen()),
-              );
-            },
-            child: Text(
-              context.loc.createAccount,
-              style: const TextStyle(
-                color: Colors.teal,
-                fontWeight: FontWeight.bold,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                context.loc.noAccount,
+                style: TextStyle(color: isDark ? Colors.grey[400] : Colors.black87),
               ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SignupScreen()),
+                  );
+                },
+                child: Text(
+                  context.loc.createAccount,
+                  style: const TextStyle(
+                    color: Colors.teal,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          RichText(
+            textAlign: TextAlign.center,
+            text: TextSpan(
+              style: GoogleFonts.cairo(
+                fontSize: 12,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+              children: [
+                const TextSpan(text: 'بالتسجيل أنت توافق على '),
+                TextSpan(
+                  text: 'سياسة الخصوصية',
+                  style: GoogleFonts.cairo(
+                    color: Colors.teal,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
+                  ),
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PrivacyPolicyScreen(),
+                        ),
+                      );
+                    },
+                ),
+              ],
             ),
+          ),
+          const SizedBox(height: 12),
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: () async {
+                    final phone = RemoteConfigHelper.supportPhone;
+                    final uri = Uri.parse('tel:$phone');
+                    if (await canLaunchUrl(uri)) await launchUrl(uri);
+                  },
+                  child: Row(
+                    children: [
+                      Text(
+                        RemoteConfigHelper.supportPhone,
+                        style: GoogleFonts.cairo(
+                          color: isDark ? Colors.grey[300] : Colors.grey[700],
+                          fontSize: 12,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.phone_outlined, color: Colors.teal, size: 16),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Text(
+                    '|',
+                    style: TextStyle(color: isDark ? Colors.grey[600] : Colors.grey[400]),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () async {
+                    final email = RemoteConfigHelper.supportEmail;
+                    final uri = Uri.parse('mailto:$email');
+                    if (await canLaunchUrl(uri)) await launchUrl(uri);
+                  },
+                  child: Row(
+                    children: [
+                      Text(
+                        RemoteConfigHelper.supportEmail,
+                        style: GoogleFonts.cairo(
+                          color: isDark ? Colors.grey[300] : Colors.grey[700],
+                          fontSize: 12,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.email_outlined, color: Colors.teal, size: 16),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'شرق النيل - بني سويف',
+                style: GoogleFonts.cairo(
+                  color: isDark ? Colors.grey[300] : Colors.grey[700],
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.location_on_outlined, color: Colors.teal, size: 16),
+            ],
           ),
         ],
       ),
