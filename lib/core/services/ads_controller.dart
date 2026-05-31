@@ -52,6 +52,8 @@ class AdsController {
         'show_phone_field': true,
         'show_ramadan_theme': false,
         'dev_x_logo_url': 'https://pub-5fe3afd0e7d64de7af15bed6205d045e.r2.dev/devx.png',
+        'show_wallet_payment': true,
+        'show_card_payment': true,
         'android_banner_ad_unit_id': 'ca-app-pub-2375099279419840/5691604828',
         'ios_banner_ad_unit_id': 'ca-app-pub-2375099279419840/5733680850',
         'android_interstitial_ad_unit_id': 'ca-app-pub-2375099279419840/5514854314',

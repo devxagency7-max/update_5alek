@@ -11,6 +11,9 @@ class RemoteConfigHelper {
   static bool _showRamadanTheme = false;
   static String _devXLogoUrl = 'https://pub-5fe3afd0e7d64de7af15bed6205d045e.r2.dev/devx.png';
   static String _supportWebsiteUrl = 'https://khaleek-qoraeb.vercel.app/';
+  static bool _showWalletPayment = true;
+  static bool _showCardPayment = true;
+
 
   // Production Ad Unit IDs fallbacks
   static String _androidBannerAdUnitId = 'ca-app-pub-2375099279419840/5691604828';
@@ -29,6 +32,9 @@ class RemoteConfigHelper {
   static bool get showRamadanTheme => _showRamadanTheme;
   static String get devXLogoUrl => _devXLogoUrl;
   static String get supportWebsiteUrl => _supportWebsiteUrl;
+  static bool get showWalletPayment => _showWalletPayment;
+  static bool get showCardPayment => _showCardPayment;
+
 
   static String get androidBannerAdUnitId => _androidBannerAdUnitId;
   static String get iosBannerAdUnitId => _iosBannerAdUnitId;
@@ -49,6 +55,9 @@ class RemoteConfigHelper {
       _showRamadanTheme = prefs.getBool('rc_show_ramadan_theme') ?? _showRamadanTheme;
       _devXLogoUrl = prefs.getString('rc_dev_x_logo_url') ?? _devXLogoUrl;
       _supportWebsiteUrl = prefs.getString('rc_support_website_url') ?? _supportWebsiteUrl;
+      _showWalletPayment = prefs.getBool('rc_show_wallet_payment') ?? _showWalletPayment;
+      _showCardPayment = prefs.getBool('rc_show_card_payment') ?? _showCardPayment;
+
 
       _androidBannerAdUnitId = prefs.getString('rc_android_banner_ad_unit_id') ?? _androidBannerAdUnitId;
       _iosBannerAdUnitId = prefs.getString('rc_ios_banner_ad_unit_id') ?? _iosBannerAdUnitId;
@@ -77,6 +86,9 @@ class RemoteConfigHelper {
       _supportWebsiteUrl = rc.getString('support_website_url').isEmpty
           ? _supportWebsiteUrl
           : rc.getString('support_website_url');
+      _showWalletPayment = rc.getBool('show_wallet_payment');
+      _showCardPayment = rc.getBool('show_card_payment');
+
 
       _devXLogoUrl = rc.getString('dev_x_logo_url').isEmpty
           ? _devXLogoUrl
@@ -111,6 +123,9 @@ class RemoteConfigHelper {
       await prefs.setBool('rc_show_ramadan_theme', _showRamadanTheme);
       await prefs.setString('rc_dev_x_logo_url', _devXLogoUrl);
       await prefs.setString('rc_support_website_url', _supportWebsiteUrl);
+      await prefs.setBool('rc_show_wallet_payment', _showWalletPayment);
+      await prefs.setBool('rc_show_card_payment', _showCardPayment);
+
 
       await prefs.setString('rc_android_banner_ad_unit_id', _androidBannerAdUnitId);
       await prefs.setString('rc_ios_banner_ad_unit_id', _iosBannerAdUnitId);

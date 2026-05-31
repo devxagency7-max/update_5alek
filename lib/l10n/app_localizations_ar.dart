@@ -777,7 +777,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notesHint => 'أدخل ملاحظاتك';
 
   @override
-  String get submitRequest => 'ادفع العربون';
+  String get submitRequest => 'ادفع';
 
   @override
   String get pickPhotoHint => 'اضغط لاختيار صورة';

@@ -432,8 +432,11 @@ class _BookingTimelineCardState extends State<_BookingTimelineCard> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        String? localSelectedMethod;
+        String? localSelectedMethod = RemoteConfigHelper.showCardPayment
+            ? 'card'
+            : (RemoteConfigHelper.showWalletPayment ? 'wallet' : null);
         String? localWalletNumber;
+
         return StatefulBuilder(
           builder: (context, setState) {
             return Padding(
@@ -455,118 +458,137 @@ class _BookingTimelineCardState extends State<_BookingTimelineCard> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  ListTile(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: localSelectedMethod == 'card'
-                            ? ((_isHotelApartment == true)
-                                  ? const Color(0xFFDFBA6B)
-                                  : AppTheme.brandPrimary)
-                            : Colors.grey.shade300,
-                        width: localSelectedMethod == 'card' ? 2 : 1,
-                      ),
-                    ),
-                    leading: Icon(
-                      Icons.credit_card,
-                      color:
-                          localSelectedMethod == 'card' && _isHotelApartment == true
-                          ? const Color(0xFFDFBA6B)
-                          : Colors.blue,
-                    ),
-                    title: Text(
-                      "Credit/Debit Card",
-                      style: GoogleFonts.cairo(
-                        fontWeight: localSelectedMethod == 'card'
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        color:
-                            localSelectedMethod == 'card' &&
-                                _isHotelApartment == true
-                            ? const Color(0xFFDFBA6B)
-                            : null,
-                      ),
-                    ),
-                    trailing: localSelectedMethod == 'card'
-                        ? Icon(
-                            Icons.check_circle,
-                            color: (_isHotelApartment == true)
-                                ? const Color(0xFFDFBA6B)
-                                : AppTheme.brandPrimary,
-                          )
-                        : null,
-                    onTap: () => setState(() {
-                      localSelectedMethod = 'card';
-                      localWalletNumber = null;
-                    }),
-                  ),
-                  const SizedBox(height: 10),
-                  ListTile(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: localSelectedMethod == 'wallet'
-                            ? ((_isHotelApartment == true)
-                                  ? const Color(0xFFDFBA6B)
-                                  : AppTheme.brandPrimary)
-                            : Colors.grey.shade300,
-                        width: localSelectedMethod == 'wallet' ? 2 : 1,
-                      ),
-                    ),
-                    leading: Icon(
-                      Icons.account_balance_wallet,
-                      color:
-                          localSelectedMethod == 'wallet' &&
-                              _isHotelApartment == true
-                          ? const Color(0xFFDFBA6B)
-                          : Colors.orange,
-                    ),
-                    title: Text(
-                      "Mobile Wallet",
-                      style: GoogleFonts.cairo(
-                        fontWeight: localSelectedMethod == 'wallet'
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        color:
-                            localSelectedMethod == 'wallet' &&
-                                _isHotelApartment == true
-                            ? const Color(0xFFDFBA6B)
-                            : null,
-                      ),
-                    ),
-                    trailing: localSelectedMethod == 'wallet'
-                        ? Icon(
-                            Icons.check_circle,
-                            color: (_isHotelApartment == true)
-                                ? const Color(0xFFDFBA6B)
-                                : AppTheme.brandPrimary,
-                          )
-                        : null,
-                    onTap: () => setState(() => localSelectedMethod = 'wallet'),
-                  ),
-                  if (localSelectedMethod == 'wallet') ...[
-                    const SizedBox(height: 15),
-                    TextField(
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        labelText: "Wallet Number",
-                        hintText: "01xxxxxxxxx",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        prefixIcon: const Icon(Icons.phone_android),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: (_isHotelApartment == true)
-                                ? const Color(0xFFDFBA6B)
-                                : AppTheme.brandPrimary,
+                  if (!RemoteConfigHelper.showCardPayment && !RemoteConfigHelper.showWalletPayment) ...[
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Text(
+                          "طرق الدفع الإلكتروني غير متوفرة حالياً",
+                          style: GoogleFonts.cairo(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
                           ),
                         ),
                       ),
-                      keyboardType: TextInputType.phone,
-                      onChanged: (val) => localWalletNumber = val,
                     ),
+                  ] else ...[
+                    if (RemoteConfigHelper.showCardPayment)
+                      ListTile(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: localSelectedMethod == 'card'
+                                ? ((_isHotelApartment == true)
+                                      ? const Color(0xFFDFBA6B)
+                                      : AppTheme.brandPrimary)
+                                : Colors.grey.shade300,
+                            width: localSelectedMethod == 'card' ? 2 : 1,
+                          ),
+                        ),
+                        leading: Icon(
+                          Icons.credit_card,
+                          color:
+                              localSelectedMethod == 'card' && _isHotelApartment == true
+                              ? const Color(0xFFDFBA6B)
+                              : Colors.blue,
+                        ),
+                        title: Text(
+                          "Credit/Debit Card",
+                          style: GoogleFonts.cairo(
+                            fontWeight: localSelectedMethod == 'card'
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color:
+                                localSelectedMethod == 'card' &&
+                                    _isHotelApartment == true
+                                ? const Color(0xFFDFBA6B)
+                                : null,
+                          ),
+                        ),
+                        trailing: localSelectedMethod == 'card'
+                            ? Icon(
+                                Icons.check_circle,
+                                color: (_isHotelApartment == true)
+                                    ? const Color(0xFFDFBA6B)
+                                    : AppTheme.brandPrimary,
+                              )
+                            : null,
+                        onTap: () => setState(() {
+                          localSelectedMethod = 'card';
+                          localWalletNumber = null;
+                        }),
+                      ),
+                    if (RemoteConfigHelper.showCardPayment && RemoteConfigHelper.showWalletPayment)
+                      const SizedBox(height: 10),
+                    if (RemoteConfigHelper.showWalletPayment)
+                      ListTile(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: localSelectedMethod == 'wallet'
+                                ? ((_isHotelApartment == true)
+                                      ? const Color(0xFFDFBA6B)
+                                      : AppTheme.brandPrimary)
+                                : Colors.grey.shade300,
+                            width: localSelectedMethod == 'wallet' ? 2 : 1,
+                          ),
+                        ),
+                        leading: Icon(
+                          Icons.account_balance_wallet,
+                          color:
+                              localSelectedMethod == 'wallet' &&
+                                  _isHotelApartment == true
+                              ? const Color(0xFFDFBA6B)
+                              : Colors.orange,
+                        ),
+                        title: Text(
+                          "Mobile Wallet",
+                          style: GoogleFonts.cairo(
+                            fontWeight: localSelectedMethod == 'wallet'
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color:
+                                localSelectedMethod == 'wallet' &&
+                                    _isHotelApartment == true
+                                ? const Color(0xFFDFBA6B)
+                                : null,
+                          ),
+                        ),
+                        trailing: localSelectedMethod == 'wallet'
+                            ? Icon(
+                                Icons.check_circle,
+                                color: (_isHotelApartment == true)
+                                    ? const Color(0xFFDFBA6B)
+                                    : AppTheme.brandPrimary,
+                              )
+                            : null,
+                        onTap: () => setState(() => localSelectedMethod = 'wallet'),
+                      ),
+                    if (localSelectedMethod == 'wallet') ...[
+                      const SizedBox(height: 15),
+                      TextField(
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          labelText: "Wallet Number",
+                          hintText: "01xxxxxxxxx",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          prefixIcon: const Icon(Icons.phone_android),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: (_isHotelApartment == true)
+                                  ? const Color(0xFFDFBA6B)
+                                  : AppTheme.brandPrimary,
+                            ),
+                          ),
+                        ),
+                        keyboardType: TextInputType.phone,
+                        onChanged: (val) => localWalletNumber = val,
+                      ),
+                    ],
                   ],
                   const SizedBox(height: 20),
                   SizedBox(
@@ -598,7 +620,19 @@ class _BookingTimelineCardState extends State<_BookingTimelineCard> {
                           ),
                         ),
                         onPressed: () {
+                          if (!RemoteConfigHelper.showCardPayment && !RemoteConfigHelper.showWalletPayment) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'طرق الدفع الإلكتروني غير متوفرة حالياً، يرجى المحاولة لاحقاً',
+                                  style: GoogleFonts.cairo(),
+                                ),
+                              ),
+                            );
+                            return;
+                          }
                           if (localSelectedMethod == null) {
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(

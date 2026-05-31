@@ -181,7 +181,17 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
     _nameController = TextEditingController(text: user?.displayName ?? '');
     _phoneController = TextEditingController(text: userData?['phone'] ?? '');
     _emailController = TextEditingController(text: user?.email ?? '');
+
+    // Set default payment method based on Remote Config visibility
+    if (RemoteConfigHelper.showCardPayment) {
+      _paymentMethod = 'card';
+    } else if (RemoteConfigHelper.showWalletPayment) {
+      _paymentMethod = 'wallet';
+    } else {
+      _paymentMethod = ''; // Both disabled
+    }
   }
+
 
   @override
   void dispose() {
@@ -687,123 +697,142 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                       ),
                     ),
                     const SizedBox(height: 15),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () =>
-                                setState(() => _paymentMethod = 'card'),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 15,
-                                horizontal: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _paymentMethod == 'card'
-                                    ? (provider.property.isHotelApartment
-                                        ? const Color(0xFFDFBA6B).withOpacity(0.1)
-                                        : const Color(0xFF008695).withOpacity(0.1))
-                                    : Colors.transparent,
-                                border: Border.all(
-                                  color: _paymentMethod == 'card'
-                                      ? (provider.property.isHotelApartment
-                                          ? const Color(0xFFDFBA6B)
-                                          : const Color(0xFF008695))
-                                      : Theme.of(
-                                          context,
-                                        ).dividerColor.withOpacity(0.5),
-                                ),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    Icons.credit_card,
+                    if (!RemoteConfigHelper.showCardPayment && !RemoteConfigHelper.showWalletPayment) ...[
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Text(
+                            "طرق الدفع الإلكتروني غير متوفرة حالياً",
+                            style: GoogleFonts.cairo(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      Row(
+                        children: [
+                          if (RemoteConfigHelper.showCardPayment)
+                            Expanded(
+                              child: InkWell(
+                                onTap: () =>
+                                    setState(() => _paymentMethod = 'card'),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 15,
+                                    horizontal: 10,
+                                  ),
+                                  decoration: BoxDecoration(
                                     color: _paymentMethod == 'card'
                                         ? (provider.property.isHotelApartment
-                                            ? const Color(0xFFDFBA6B)
-                                            : const Color(0xFF008695))
-                                        : Colors.grey,
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Text(
-                                    "بطاقة بنكية", // context.loc.payWithCard
-                                    style: GoogleFonts.cairo(
-                                      fontSize: 12,
-                                      fontWeight: _paymentMethod == 'card'
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
+                                            ? const Color(0xFFDFBA6B).withOpacity(0.1)
+                                            : const Color(0xFF008695).withOpacity(0.1))
+                                        : Colors.transparent,
+                                    border: Border.all(
                                       color: _paymentMethod == 'card'
                                           ? (provider.property.isHotelApartment
                                               ? const Color(0xFFDFBA6B)
                                               : const Color(0xFF008695))
-                                          : Colors.grey,
+                                          : Theme.of(
+                                              context,
+                                            ).dividerColor.withOpacity(0.5),
                                     ),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
-                                ],
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        Icons.credit_card,
+                                        color: _paymentMethod == 'card'
+                                            ? (provider.property.isHotelApartment
+                                                ? const Color(0xFFDFBA6B)
+                                                : const Color(0xFF008695))
+                                            : Colors.grey,
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        "بطاقة بنكية", // context.loc.payWithCard
+                                        style: GoogleFonts.cairo(
+                                          fontSize: 12,
+                                          fontWeight: _paymentMethod == 'card'
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                          color: _paymentMethod == 'card'
+                                              ? (provider.property.isHotelApartment
+                                                  ? const Color(0xFFDFBA6B)
+                                                  : const Color(0xFF008695))
+                                              : Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 15),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () =>
-                                setState(() => _paymentMethod = 'wallet'),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 15,
-                                horizontal: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _paymentMethod == 'wallet'
-                                    ? (provider.property.isHotelApartment
-                                        ? const Color(0xFFDFBA6B).withOpacity(0.1)
-                                        : const Color(0xFF39BB5E).withOpacity(0.1))
-                                    : Colors.transparent,
-                                border: Border.all(
-                                  color: _paymentMethod == 'wallet'
-                                      ? (provider.property.isHotelApartment
-                                          ? const Color(0xFFDFBA6B)
-                                          : const Color(0xFF39BB5E))
-                                      : Theme.of(
-                                          context,
-                                        ).dividerColor.withOpacity(0.5),
-                                ),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    Icons.account_balance_wallet,
+                          if (RemoteConfigHelper.showCardPayment && RemoteConfigHelper.showWalletPayment)
+                            const SizedBox(width: 15),
+                          if (RemoteConfigHelper.showWalletPayment)
+                            Expanded(
+                              child: InkWell(
+                                onTap: () =>
+                                    setState(() => _paymentMethod = 'wallet'),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 15,
+                                    horizontal: 10,
+                                  ),
+                                  decoration: BoxDecoration(
                                     color: _paymentMethod == 'wallet'
                                         ? (provider.property.isHotelApartment
-                                            ? const Color(0xFFDFBA6B)
-                                            : const Color(0xFF39BB5E))
-                                        : Colors.grey,
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Text(
-                                    "محفظة إلكترونية", // context.loc.payWithWallet
-                                    style: GoogleFonts.cairo(
-                                      fontSize: 12,
-                                      fontWeight: _paymentMethod == 'wallet'
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
+                                            ? const Color(0xFFDFBA6B).withOpacity(0.1)
+                                            : const Color(0xFF39BB5E).withOpacity(0.1))
+                                        : Colors.transparent,
+                                    border: Border.all(
                                       color: _paymentMethod == 'wallet'
                                           ? (provider.property.isHotelApartment
                                               ? const Color(0xFFDFBA6B)
                                               : const Color(0xFF39BB5E))
-                                          : Colors.grey,
+                                          : Theme.of(
+                                              context,
+                                            ).dividerColor.withOpacity(0.5),
                                     ),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
-                                ],
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        Icons.account_balance_wallet,
+                                        color: _paymentMethod == 'wallet'
+                                            ? (provider.property.isHotelApartment
+                                                ? const Color(0xFFDFBA6B)
+                                                : const Color(0xFF39BB5E))
+                                            : Colors.grey,
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        "محفظة إلكترونية", // context.loc.payWithWallet
+                                        style: GoogleFonts.cairo(
+                                          fontSize: 12,
+                                          fontWeight: _paymentMethod == 'wallet'
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                          color: _paymentMethod == 'wallet'
+                                              ? (provider.property.isHotelApartment
+                                                  ? const Color(0xFFDFBA6B)
+                                                  : const Color(0xFF39BB5E))
+                                              : Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                     if (_paymentMethod == 'wallet') ...[
                       const SizedBox(height: 20),
                       TextFormField(
@@ -836,91 +865,109 @@ class _BookingRequestContentState extends State<_BookingRequestContent> {
                 ),
               ),
               const SizedBox(height: 20),
-                          // Submit
-              Container(
-                width: double.infinity,
-                height: 55,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  gradient: provider.property.isHotelApartment
-                      ? const LinearGradient(
-                          colors: [
-                            Color(0xFFF3E5AB),
-                            Color(0xFFDFBA6B),
-                            Color(0xFF9E7D3B),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : const LinearGradient(
-                          colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                ),
-                child: ElevatedButton(
-                  onPressed: provider.isSubmitting
-                      ? null
-                      : () async {
-                          // 1. Validate Form
-                          if (!_formKey.currentState!.validate()) return;
-
-                          // 2. User Info
-                          final user = context.read<AuthProvider>().user;
-                          if (user == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  context.loc.guestActionRestrictedDesc,
-                                ),
-                              ),
-                            );
-                            return;
-                          }
-
-                          // 3. Price validation
-                          if (provider.price <= 0) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'سعر الوحدة المختارة غير صحيح، يرجى التواصل مع الدعم',
-                                  style: GoogleFonts.cairo(),
-                                ),
-                              ),
-                            );
-                            return;
-                          }
-
-                          await _showPaymentSummary(context);
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
+              _buildPrivacyContactCard(provider.property.isHotelApartment),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+          child: Container(
+            width: double.infinity,
+            height: 55,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              gradient: provider.property.isHotelApartment
+                  ? const LinearGradient(
+                      colors: [
+                        Color(0xFFF3E5AB),
+                        Color(0xFFDFBA6B),
+                        Color(0xFF9E7D3B),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : const LinearGradient(
+                      colors: [Color(0xFF39BB5E), Color(0xFF008695)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                  ),
-                  child: provider.isSubmitting
-                      ? CircularProgressIndicator(
-                          color: provider.property.isHotelApartment
-                              ? Colors.black
-                              : Colors.white,
-                        )
-                      : Text(
-                          context.loc.submitRequest, // "دفع العربون وحجز"
-                          style: GoogleFonts.cairo(
-                            color: provider.property.isHotelApartment
-                                ? Colors.black
-                                : Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+            ),
+            child: ElevatedButton(
+              onPressed: provider.isSubmitting
+                  ? null
+                  : () async {
+                       // 1. Validate Form
+                       if (!_formKey.currentState!.validate()) return;
+
+                       // Validate that at least one payment method is available and selected
+                       if (_paymentMethod.isEmpty) {
+                         ScaffoldMessenger.of(context).showSnackBar(
+                           SnackBar(
+                             content: Text(
+                               'طرق الدفع الإلكتروني غير متوفرة حالياً، يرجى المحاولة لاحقاً',
+                               style: GoogleFonts.cairo(),
+                             ),
+                           ),
+                         );
+                         return;
+                       }
+
+
+                      // 2. User Info
+                      final user = context.read<AuthProvider>().user;
+                      if (user == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              context.loc.guestActionRestrictedDesc,
+                            ),
                           ),
-                        ),
+                        );
+                        return;
+                      }
+
+                      // 3. Price validation
+                      if (provider.price <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'سعر الوحدة المختارة غير صحيح، يرجى التواصل مع الدعم',
+                              style: GoogleFonts.cairo(),
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+
+                      await _showPaymentSummary(context);
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
                 ),
               ),
-              const SizedBox(height: 20),
-              _buildPrivacyContactCard(provider.property.isHotelApartment),
-            ],
+              child: provider.isSubmitting
+                  ? CircularProgressIndicator(
+                      color: provider.property.isHotelApartment
+                          ? Colors.black
+                          : Colors.white,
+                    )
+                  : Text(
+                      context.loc.submitRequest, // "دفع العربون وحجز"
+                      style: GoogleFonts.cairo(
+                        color: provider.property.isHotelApartment
+                            ? Colors.black
+                            : Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+            ),
           ),
         ),
       ),
