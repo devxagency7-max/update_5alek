@@ -223,7 +223,7 @@ class _AvailableUnitsCardState extends State<AvailableUnitsCard> {
                               ),
                               DropdownMenuItem(
                                 value: 'bed',
-                                child: Text("نظام الأسرة (سكن مشترك)"),
+                                child: Text("نظام العدد السرير  (سكن مشترك)"),
                               ),
                             ],
                             onChanged: (val) {
@@ -286,7 +286,7 @@ class _AvailableUnitsCardState extends State<AvailableUnitsCard> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  "يحجز الطالب سرير واحد في غرفة مشتركة. السعر الكلي سيتم تقسيمه على عدد الأسرة.",
+                  "يحجز الطالب سرير واحد في غرفة مشتركة. السعر الكلي سيتم تقسيمه على عدد العدد السرير .",
                   style: GoogleFonts.cairo(
                     fontSize: 12,
                     color: Colors.blue.shade800,
@@ -301,7 +301,7 @@ class _AvailableUnitsCardState extends State<AvailableUnitsCard> {
           children: [
             Expanded(
               child: CustomTextField(
-                label: "عدد الأسرة الكلي",
+                label: "عدد العدد السرير  الكلي",
                 hint: '6',
                 controller: widget.totalBedsController,
                 keyboardType: TextInputType.number,
@@ -515,7 +515,7 @@ class _AvailableUnitsCardState extends State<AvailableUnitsCard> {
                                     ),
                                   ),
                                   Text(
-                                    'عدد الأسرة: $beds',
+                                    'عدد العدد السرير : $beds',
                                     style: GoogleFonts.cairo(
                                       color: Colors.grey,
                                       fontSize: 12,
@@ -742,7 +742,7 @@ class _RoomEditDialogState extends State<RoomEditDialog> {
                 color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
               decoration: InputDecoration(
-                labelText: "عدد الأسرة",
+                labelText: "عدد العدد السرير ",
                 labelStyle: GoogleFonts.cairo(
                   color: Theme.of(context).brightness == Brightness.dark
                       ? Colors.grey[400]
@@ -936,7 +936,7 @@ class _AddRoomSheetState extends State<AddRoomSheet> {
           ),
           const SizedBox(height: 20),
           Text(
-            "عدد الأسرة في الغرفة",
+            "عدد العدد السرير  في الغرفة",
             style: GoogleFonts.cairo(fontSize: 14, color: Colors.grey),
           ),
           const SizedBox(height: 10),
@@ -947,7 +947,7 @@ class _AddRoomSheetState extends State<AddRoomSheet> {
               color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
             decoration: InputDecoration(
-              hintText: "أدخل عدد الأسرة",
+              hintText: "أدخل عدد العدد السرير ",
               hintStyle: GoogleFonts.cairo(
                 color: isDark ? Colors.grey[600] : Colors.grey,
               ),

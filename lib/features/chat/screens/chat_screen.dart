@@ -232,13 +232,14 @@ class _ChatScreenState extends State<ChatScreen> {
             tooltip: 'الانتقال للرسائل المثبتة',
           ),
         IconButton(
-          icon: const Icon(Icons.report_gmailerrorred_outlined, color: Colors.redAccent),
+          icon: const Icon(
+            Icons.report_gmailerrorred_outlined,
+            color: Colors.redAccent,
+          ),
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => const ReportScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const ReportScreen()),
             );
           },
           tooltip: 'إرسال بلاغ',

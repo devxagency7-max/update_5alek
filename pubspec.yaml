@@ -71,6 +71,7 @@ dependencies:
   firebase_storage: ^13.0.6
   lottie: ^3.3.2
   dotlottie_loader: ^0.0.5
+  firebase_messaging: ^16.3.0
 
 dev_dependencies:
   flutter_test:

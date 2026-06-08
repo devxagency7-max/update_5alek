@@ -8,10 +8,7 @@ import 'package:motareb/core/extensions/loc_extension.dart';
 class PrivacyPolicyScreen extends StatelessWidget {
   final bool isHotelApartment;
 
-  const PrivacyPolicyScreen({
-    super.key,
-    this.isHotelApartment = false,
-  });
+  const PrivacyPolicyScreen({super.key, this.isHotelApartment = false});
 
   @override
   Widget build(BuildContext context) {
@@ -142,10 +139,11 @@ class PrivacyPolicyScreen extends StatelessWidget {
               ? []
               : [
                   BoxShadow(
-                    color: (isHotelApartment
-                            ? const Color(0xFFDFBA6B)
-                            : const Color(0xFF008695))
-                        .withValues(alpha: 0.1),
+                    color:
+                        (isHotelApartment
+                                ? const Color(0xFFDFBA6B)
+                                : const Color(0xFF008695))
+                            .withValues(alpha: 0.1),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -166,11 +164,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                           color: themeColor.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          icon,
-                          color: themeColor,
-                          size: 24,
-                        ),
+                        child: Icon(icon, color: themeColor, size: 24),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -218,7 +212,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
       height: 1.8,
       color: isDark ? Colors.grey[300] : Colors.grey[700],
     );
-    
+
     final accentColor = isHotelApartment
         ? const Color(0xFFDFBA6B)
         : const Color(0xFF008695);

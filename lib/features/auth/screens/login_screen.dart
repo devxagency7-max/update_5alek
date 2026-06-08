@@ -151,7 +151,10 @@ class _LoginScreenState extends State<LoginScreen> {
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   return SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0,
+                      vertical: 16.0,
+                    ),
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
                         minHeight: constraints.maxHeight - 32.0,
@@ -180,11 +183,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             FadeInDown(
                               delay: const Duration(milliseconds: 300),
                               child: ShaderMask(
-                                shaderCallback: (bounds) => const LinearGradient(
-                                  colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-                                  begin: Alignment.centerRight,
-                                  end: Alignment.centerLeft,
-                                ).createShader(bounds),
+                                shaderCallback: (bounds) =>
+                                    const LinearGradient(
+                                      colors: [
+                                        Color(0xFF39BB5E),
+                                        Color(0xFF008695),
+                                      ],
+                                      begin: Alignment.centerRight,
+                                      end: Alignment.centerLeft,
+                                    ).createShader(bounds),
                                 child: Text(
                                   context.loc.welcomeBack,
                                   textAlign: TextAlign.center,
@@ -317,8 +324,15 @@ class _LoginScreenState extends State<LoginScreen> {
           color: isDark ? Colors.grey[500] : Colors.grey[400],
           fontSize: 13,
         ),
-        prefixIcon: const Icon(Icons.email_outlined, color: Colors.teal, size: 20),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        prefixIcon: const Icon(
+          Icons.email_outlined,
+          color: Colors.teal,
+          size: 20,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         filled: true,
         fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[50],
         border: OutlineInputBorder(
@@ -362,7 +376,11 @@ class _LoginScreenState extends State<LoginScreen> {
           color: isDark ? Colors.grey[500] : Colors.grey[400],
           fontSize: 13,
         ),
-        prefixIcon: const Icon(Icons.lock_outline, color: Colors.teal, size: 20),
+        prefixIcon: const Icon(
+          Icons.lock_outline,
+          color: Colors.teal,
+          size: 20,
+        ),
         suffixIcon: IconButton(
           icon: Icon(
             _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
@@ -372,7 +390,10 @@ class _LoginScreenState extends State<LoginScreen> {
           onPressed: () =>
               setState(() => _isPasswordVisible = !_isPasswordVisible),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         filled: true,
         fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[50],
         border: OutlineInputBorder(
@@ -410,20 +431,28 @@ class _LoginScreenState extends State<LoginScreen> {
             Navigator.push(
               context,
               PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => const ForgotPasswordScreen(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  const begin = Offset(1.0, 0.0); // انزلاق جانبي من اليمين لليسار
-                  const end = Offset.zero;
-                  const curve = Curves.easeInOut;
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    const ForgotPasswordScreen(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                      const begin = Offset(
+                        1.0,
+                        0.0,
+                      ); // انزلاق جانبي من اليمين لليسار
+                      const end = Offset.zero;
+                      const curve = Curves.easeInOut;
 
-                  var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                  var offsetAnimation = animation.drive(tween);
+                      var tween = Tween(
+                        begin: begin,
+                        end: end,
+                      ).chain(CurveTween(curve: curve));
+                      var offsetAnimation = animation.drive(tween);
 
-                  return SlideTransition(
-                    position: offsetAnimation,
-                    child: child,
-                  );
-                },
+                      return SlideTransition(
+                        position: offsetAnimation,
+                        child: child,
+                      );
+                    },
                 transitionDuration: const Duration(milliseconds: 350),
               ),
             );
@@ -609,13 +638,17 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               Text(
                 context.loc.noAccount,
-                style: TextStyle(color: isDark ? Colors.grey[400] : Colors.black87),
+                style: TextStyle(
+                  color: isDark ? Colors.grey[400] : Colors.black87,
+                ),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const SignupScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => const SignupScreen(),
+                    ),
                   );
                 },
                 child: Text(
@@ -681,7 +714,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(Icons.phone_outlined, color: Colors.teal, size: 16),
+                      const Icon(
+                        Icons.phone_outlined,
+                        color: Colors.teal,
+                        size: 16,
+                      ),
                     ],
                   ),
                 ),
@@ -689,7 +726,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: Text(
                     '|',
-                    style: TextStyle(color: isDark ? Colors.grey[600] : Colors.grey[400]),
+                    style: TextStyle(
+                      color: isDark ? Colors.grey[600] : Colors.grey[400],
+                    ),
                   ),
                 ),
                 GestureDetector(
@@ -709,7 +748,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(Icons.email_outlined, color: Colors.teal, size: 16),
+                      const Icon(
+                        Icons.email_outlined,
+                        color: Colors.teal,
+                        size: 16,
+                      ),
                     ],
                   ),
                 ),
@@ -728,7 +771,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(Icons.location_on_outlined, color: Colors.teal, size: 16),
+              const Icon(
+                Icons.location_on_outlined,
+                color: Colors.teal,
+                size: 16,
+              ),
             ],
           ),
         ],

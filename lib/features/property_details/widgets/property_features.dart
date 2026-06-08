@@ -1,4 +1,3 @@
-import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:motareb/core/extensions/loc_extension.dart';
@@ -55,9 +54,7 @@ class _PropertyFeaturesState extends State<PropertyFeatures> {
   Widget build(BuildContext context) {
     if (widget.tags.isEmpty) return const SizedBox.shrink();
 
-    return FadeInUp(
-      delay: const Duration(milliseconds: 100),
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -115,8 +112,12 @@ class _PropertyFeaturesState extends State<PropertyFeatures> {
                         context,
                         icon,
                         tag,
-                        widget.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
-                        widget.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
+                        widget.isHotelApartment
+                            ? Theme.of(context).primaryColor
+                            : Theme.of(context).colorScheme.secondary,
+                        widget.isHotelApartment
+                            ? Theme.of(context).primaryColor
+                            : Theme.of(context).colorScheme.secondary,
                       ),
                     );
                   }).toList(),
@@ -126,28 +127,27 @@ class _PropertyFeaturesState extends State<PropertyFeatures> {
                 Positioned(
                   left: -5,
                   child: IgnorePointer(
-                    child: FadeInLeft(
-                      duration: const Duration(milliseconds: 500),
-                      child: Container(
-                        height: 50,
-                        width: 40,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                            colors: [
-                              Theme.of(context).scaffoldBackgroundColor,
-                              Theme.of(
-                                context,
-                              ).scaffoldBackgroundColor.withValues(alpha: 0.1),
-                            ],
-                          ),
+                    child: Container(
+                      height: 50,
+                      width: 40,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Theme.of(context).scaffoldBackgroundColor,
+                            Theme.of(
+                              context,
+                            ).scaffoldBackgroundColor.withValues(alpha: 0.1),
+                          ],
                         ),
-                        child: Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 16,
-                          color: widget.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
-                        ),
+                      ),
+                      child: Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 16,
+                        color: widget.isHotelApartment
+                            ? Theme.of(context).primaryColor
+                            : Theme.of(context).colorScheme.secondary,
                       ),
                     ),
                   ),
@@ -156,7 +156,6 @@ class _PropertyFeaturesState extends State<PropertyFeatures> {
           ),
           const SizedBox(height: 25),
         ],
-      ),
     );
   }
 

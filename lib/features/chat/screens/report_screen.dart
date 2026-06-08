@@ -33,7 +33,9 @@ class _ReportScreenState extends State<ReportScreen> {
           ),
           backgroundColor: Colors.red.shade400,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
       return;
@@ -70,7 +72,9 @@ class _ReportScreenState extends State<ReportScreen> {
           ),
           backgroundColor: const Color(0xFF39BB5E),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
 
@@ -85,7 +89,9 @@ class _ReportScreenState extends State<ReportScreen> {
           ),
           backgroundColor: Colors.red.shade400,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     } finally {
@@ -209,9 +215,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   color: isDark ? Colors.grey.shade900 : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isDark
-                        ? Colors.grey.shade800
-                        : Colors.grey.shade300,
+                    color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
                   ),
                   boxShadow: isDark
                       ? []

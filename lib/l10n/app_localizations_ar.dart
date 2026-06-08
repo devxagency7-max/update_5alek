@@ -42,7 +42,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get room => 'غرفة';
 
   @override
-  String get beds => 'أسرة';
+  String get beds => 'عدد السرير ';
 
   @override
   String get bed => 'سرير';
@@ -641,7 +641,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get signInNow => 'سجل دخول الآن';
 
   @override
-  String get bedsSelectionError => 'الرجاء اختيار الأسرة';
+  String get bedsSelectionError => 'الرجاء اختيار العدد السرير ';
 
   @override
   String get fullApartment => 'شقة بالكامل';
@@ -792,7 +792,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noNumbersAvailable => 'لا يوجد أرقام متاحة';
 
   @override
-  String get bookBeds => 'حجز أسرة';
+  String get bookBeds => 'حجز عدد السرير ';
 
   @override
   String roomType(String type) {
@@ -800,11 +800,11 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get requestedBedsCount => 'عدد الأسرة المطلوبة';
+  String get requestedBedsCount => 'عدد العدد السرير  المطلوبة';
 
   @override
   String remainingBeds(int count) {
-    return 'متبقي $count أسرة';
+    return 'متبقي $count عدد السرير ';
   }
 
   @override

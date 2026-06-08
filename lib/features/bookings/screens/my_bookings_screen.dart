@@ -119,21 +119,28 @@ class _BookingTimelineCardState extends State<_BookingTimelineCard> {
 
   Future<void> _checkIfHotelApartment() async {
     final propertyId = widget.data['propertyId'];
-    if (propertyId != null) {
-      try {
-        final doc = await FirebaseFirestore.instance
-            .collection('properties')
-            .doc(propertyId)
-            .get();
-        if (doc.exists && mounted) {
-          final data = doc.data();
-          setState(() {
-            _isHotelApartment = data?['isHotelApartment'] ?? false;
-          });
-        }
-      } catch (e) {
-        // ignore
+    if (propertyId == null) return;
+
+    // TAJ HOUSE bookings reference `hotel_properties`, not `properties`.
+    final isHotelBooking = widget.data['isHotelBooking'] == true;
+    if (isHotelBooking) {
+      if (mounted) setState(() => _isHotelApartment = true);
+      return;
+    }
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('properties')
+          .doc(propertyId)
+          .get();
+      if (doc.exists && mounted) {
+        final data = doc.data();
+        setState(() {
+          _isHotelApartment = data?['isHotelApartment'] ?? false;
+        });
       }
+    } catch (e) {
+      // ignore
     }
   }
 
@@ -458,7 +465,8 @@ class _BookingTimelineCardState extends State<_BookingTimelineCard> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  if (!RemoteConfigHelper.showCardPayment && !RemoteConfigHelper.showWalletPayment) ...[
+                  if (!RemoteConfigHelper.showCardPayment &&
+                      !RemoteConfigHelper.showWalletPayment) ...[
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 20),
@@ -489,7 +497,8 @@ class _BookingTimelineCardState extends State<_BookingTimelineCard> {
                         leading: Icon(
                           Icons.credit_card,
                           color:
-                              localSelectedMethod == 'card' && _isHotelApartment == true
+                              localSelectedMethod == 'card' &&
+                                  _isHotelApartment == true
                               ? const Color(0xFFDFBA6B)
                               : Colors.blue,
                         ),
@@ -519,7 +528,8 @@ class _BookingTimelineCardState extends State<_BookingTimelineCard> {
                           localWalletNumber = null;
                         }),
                       ),
-                    if (RemoteConfigHelper.showCardPayment && RemoteConfigHelper.showWalletPayment)
+                    if (RemoteConfigHelper.showCardPayment &&
+                        RemoteConfigHelper.showWalletPayment)
                       const SizedBox(height: 10),
                     if (RemoteConfigHelper.showWalletPayment)
                       ListTile(
@@ -563,7 +573,8 @@ class _BookingTimelineCardState extends State<_BookingTimelineCard> {
                                     : AppTheme.brandPrimary,
                               )
                             : null,
-                        onTap: () => setState(() => localSelectedMethod = 'wallet'),
+                        onTap: () =>
+                            setState(() => localSelectedMethod = 'wallet'),
                       ),
                     if (localSelectedMethod == 'wallet') ...[
                       const SizedBox(height: 15),
@@ -620,7 +631,8 @@ class _BookingTimelineCardState extends State<_BookingTimelineCard> {
                           ),
                         ),
                         onPressed: () {
-                          if (!RemoteConfigHelper.showCardPayment && !RemoteConfigHelper.showWalletPayment) {
+                          if (!RemoteConfigHelper.showCardPayment &&
+                              !RemoteConfigHelper.showWalletPayment) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
@@ -632,7 +644,6 @@ class _BookingTimelineCardState extends State<_BookingTimelineCard> {
                             return;
                           }
                           if (localSelectedMethod == null) {
-
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
@@ -645,8 +656,9 @@ class _BookingTimelineCardState extends State<_BookingTimelineCard> {
                           }
                           if (localSelectedMethod == 'wallet' &&
                               (localWalletNumber == null ||
-                                  !RegExp(r'^01[0-2,5]{1}[0-9]{8}$')
-                                      .hasMatch(localWalletNumber!))) {
+                                  !RegExp(
+                                    r'^01[0-2,5]{1}[0-9]{8}$',
+                                  ).hasMatch(localWalletNumber!))) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
@@ -863,15 +875,42 @@ class _BookingTimelineCardState extends State<_BookingTimelineCard> {
   Widget _buildHeader(BuildContext context, String? propertyId) {
     if (propertyId == null) return const SizedBox.shrink();
 
+    // TAJ HOUSE bookings reference `hotel_properties`, not `properties`.
+    final isHotelBooking = widget.data['isHotelBooking'] == true;
+    final collection = isHotelBooking ? 'hotel_properties' : 'properties';
+
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance
-          .collection('properties')
+          .collection(collection)
           .doc(propertyId)
           .get(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const LinearProgressIndicator();
         final pData = snapshot.data!.data() as Map<String, dynamic>?;
-        if (pData == null) return const SizedBox();
+        if (pData == null) {
+          return ListTile(
+            leading: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.grey.shade200,
+              ),
+              child: const Icon(Icons.error_outline, color: Colors.red),
+            ),
+            title: Text(
+              'عقار غير موجود',
+              style: GoogleFonts.cairo(
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
+              ),
+            ),
+            subtitle: Text(
+              "ID: $propertyId",
+              style: GoogleFonts.cairo(fontSize: 10, color: Colors.grey),
+            ),
+          );
+        }
 
         final title = pData['title'] ?? 'Unknown Property';
 

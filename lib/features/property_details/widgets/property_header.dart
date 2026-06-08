@@ -1,8 +1,6 @@
-import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/models/property_model.dart';
-import '../../../../core/theme/app_theme.dart';
 
 class PropertyHeader extends StatelessWidget {
   final Property property;
@@ -18,8 +16,7 @@ class PropertyHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FadeInUp(
-      child: Row(
+    return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
@@ -33,8 +30,8 @@ class PropertyHeader extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                     height: 1.2,
                     color: property.isHotelApartment
-                        ? const Color(0xFFDFBA6B)
-                        : Theme.of(context).textTheme.bodyLarge?.color,
+                      ? Theme.of(context).primaryColor
+                      : Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
                 if (property.featuredLabel != null &&
@@ -46,17 +43,16 @@ class PropertyHeader extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      gradient: property.isHotelApartment
-                          ? const LinearGradient(
-                              colors: [Color(0xFFDFBA6B), Color(0xFF9E7D3B)],
-                            )
-                          : AppTheme.primaryGradient,
+                      gradient: LinearGradient(
+                        colors: [
+                          Theme.of(context).primaryColor,
+                          Theme.of(context).colorScheme.secondary,
+                        ],
+                      ),
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: property.isHotelApartment
-                              ? const Color(0xFF9E7D3B).withOpacity(0.2)
-                              : const Color(0xFF008695).withOpacity(0.2),
+                          color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -66,7 +62,9 @@ class PropertyHeader extends StatelessWidget {
                       property.localizedFeaturedLabel(context),
                       style: GoogleFonts.cairo(
                         fontSize: 12,
-                        color: property.isHotelApartment ? Colors.black : Colors.white,
+                        color: (property.isHotelApartment && property.tier == 'premium')
+                            ? Colors.black
+                            : Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -79,19 +77,17 @@ class PropertyHeader extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: property.isHotelApartment
-                            ? const Color(0xFFDFBA6B).withOpacity(0.1)
-                            : const Color(0xFF008695).withOpacity(0.1),
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.location_on_rounded,
                         size: 18,
                         color: property.isHotelApartment
-                            ? const Color(0xFFDFBA6B)
+                            ? Theme.of(context).primaryColor
                             : (Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFF39BB5E)
-                                : const Color(0xFF008695)),
+                                  ? Theme.of(context).primaryColor
+                                  : Theme.of(context).colorScheme.secondary),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -138,14 +134,15 @@ class PropertyHeader extends StatelessWidget {
                     : Icons.favorite_border_rounded,
                 color: isFavorite
                     ? Colors.red
-                    : (property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695)),
+                    : (property.isHotelApartment
+                          ? Theme.of(context).primaryColor
+                          : Theme.of(context).colorScheme.secondary),
                 size: 28,
               ),
               onPressed: onToggleFavorite,
             ),
           ),
         ],
-      ),
     );
   }
 }

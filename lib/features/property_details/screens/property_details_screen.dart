@@ -138,8 +138,10 @@ class _PropertyDetailsContentState extends State<_PropertyDetailsContent> {
     // Proceed to booking
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => BookingRequestScreen(
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 300),
+        reverseTransitionDuration: const Duration(milliseconds: 300),
+        pageBuilder: (_, __, ___) => BookingRequestScreen(
           property: provider.property,
           selectionDetails: selectionDetails,
           price: provider.selectedPrice,
@@ -149,6 +151,17 @@ class _PropertyDetailsContentState extends State<_PropertyDetailsContent> {
               ? provider.selectedBedCount
               : null,
         ),
+        transitionsBuilder: (_, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+          final tween =
+              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
       ),
     );
   }
@@ -185,7 +198,7 @@ class _PropertyDetailsContentState extends State<_PropertyDetailsContent> {
           children: [
             Icon(
               Icons.school_outlined,
-              color: const Color(0xFF008695),
+              color: Theme.of(context).colorScheme.secondary,
               size: 22,
             ),
             const SizedBox(width: 10),
@@ -252,7 +265,7 @@ class _PropertyDetailsContentState extends State<_PropertyDetailsContent> {
       children: [
         Row(
           children: [
-            Icon(icon, color: const Color(0xFF008695), size: 22),
+            Icon(icon, color: Theme.of(context).colorScheme.secondary, size: 22),
             const SizedBox(width: 10),
             Text(
               title,
@@ -300,6 +313,85 @@ class _PropertyDetailsContentState extends State<_PropertyDetailsContent> {
     );
   }
 
+  String _hotelTierLabel(String? tier) => switch (tier) {
+        'premium' => 'Premium',
+        'plus' => 'Plus',
+        'basic' => 'Basic',
+        _ => '',
+      };
+
+  Widget _hotelInfoChip(BuildContext context, String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = Theme.of(context).primaryColor;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: isDark ? 0.15 : 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Text(
+        '$label: $value',
+        style: GoogleFonts.cairo(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHotelInfoSection(BuildContext context, Property property) {
+    final chips = <Widget>[
+      if ((property.tier ?? '').isNotEmpty)
+        _hotelInfoChip(context, 'الفئة', _hotelTierLabel(property.tier)),
+      if ((property.roomType ?? '').isNotEmpty)
+        _hotelInfoChip(context, 'نوع الغرفة', property.roomType!),
+      if (property.capacity != null && property.capacity! > 0)
+        _hotelInfoChip(context, 'السعة', '${property.capacity} أشخاص'),
+      if ((property.paymentMode ?? '').isNotEmpty)
+        _hotelInfoChip(
+          context,
+          'طريقة الدفع',
+          property.paymentMode == 'term' ? 'بالفصل الدراسي' : 'شهري',
+        ),
+      if (property.paymentMode == 'term' &&
+          property.termPrice != null &&
+          property.termPrice! > 0)
+        _hotelInfoChip(
+          context,
+          'سعر الفصل الدراسي',
+          '${property.termPrice!.toStringAsFixed(0)} ج',
+        ),
+    ];
+
+    if (chips.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.hotel_outlined, color: Theme.of(context).primaryColor, size: 22),
+            const SizedBox(width: 10),
+            Text(
+              'تفاصيل غرفة الفندق',
+              style: GoogleFonts.cairo(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(spacing: 10, runSpacing: 10, children: chips),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Access Providers
@@ -309,12 +401,24 @@ class _PropertyDetailsContentState extends State<_PropertyDetailsContent> {
 
     final isFavorite = favoritesProvider.isFavorite(property.id);
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Stack(
-        children: [
-          RefreshIndicator(
-            color: const Color(0xFF008695),
+    final colors = _getTierColors(property.tier, property.isHotelApartment);
+    final primaryColor = colors.first;
+    final secondaryColor = colors.last;
+
+    return Theme(
+      data: Theme.of(context).copyWith(
+        primaryColor: primaryColor,
+        colorScheme: Theme.of(context).colorScheme.copyWith(
+          primary: primaryColor,
+          secondary: secondaryColor,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Stack(
+          children: [
+            RefreshIndicator(
+              color: Theme.of(context).colorScheme.secondary,
             onRefresh: () async {
               await context.read<PropertyDetailsProvider>().refreshProperty();
             },
@@ -357,6 +461,13 @@ class _PropertyDetailsContentState extends State<_PropertyDetailsContent> {
                                 tags: property.localizedAmenities(context),
                                 isHotelApartment: property.isHotelApartment,
                               ),
+                              if (property.isHotelApartment) ...[
+                                const SizedBox(height: 20),
+                                Builder(
+                                  builder: (innerContext) =>
+                                      _buildHotelInfoSection(innerContext, property),
+                                ),
+                              ],
                               PropertyVideo(videoUrl: property.videoUrl),
                               const PropertyOwner(), // Internal logic via Provider
                               // ⬇️ Ad Space (Custom or Google Native)
@@ -400,29 +511,36 @@ class _PropertyDetailsContentState extends State<_PropertyDetailsContent> {
                               // Student Section (Gender)
                               if (property.gender != null &&
                                   property.gender!.isNotEmpty) ...[
-                                _buildStudentSection(context, property.gender),
+                                Builder(
+                                  builder: (innerContext) =>
+                                      _buildStudentSection(innerContext, property.gender),
+                                ),
                                 const SizedBox(height: 20),
                               ],
                               const SizedBox(height: 20),
 
                               // Nearby Universities Section
                               if (property.universities.isNotEmpty) ...[
-                                _buildNearbySection(
-                                  context,
-                                  context.loc.nearbyUniversities,
-                                  property.localizedUniversities(context),
-                                  Icons.school_outlined,
+                                Builder(
+                                  builder: (innerContext) => _buildNearbySection(
+                                    innerContext,
+                                    context.loc.nearbyUniversities,
+                                    property.localizedUniversities(context),
+                                    Icons.school_outlined,
+                                  ),
                                 ),
                                 const SizedBox(height: 20),
                               ],
 
                               // Nearby Places Section
                               if (property.nearbyPlaces.isNotEmpty) ...[
-                                _buildNearbySection(
-                                  context,
-                                  context.loc.nearbyPlaces,
-                                  property.localizedNearbyPlaces(context),
-                                  Icons.place_outlined,
+                                Builder(
+                                  builder: (innerContext) => _buildNearbySection(
+                                    innerContext,
+                                    context.loc.nearbyPlaces,
+                                    property.localizedNearbyPlaces(context),
+                                    Icons.place_outlined,
+                                  ),
                                 ),
                               ],
                             ],
@@ -443,6 +561,20 @@ class _PropertyDetailsContentState extends State<_PropertyDetailsContent> {
           ),
         ],
       ),
+    ) // End of Theme
     );
+  }
+
+  List<Color> _getTierColors(String? tier, bool isHotelApartment) {
+    if (!isHotelApartment) {
+      return const [Color(0xFF39BB5E), Color(0xFF008695)];
+    }
+    final t = tier?.toLowerCase();
+    return switch (t) {
+      'premium' => const [Color(0xFFDFBA6B), Color(0xFF9E7D3B)], // Gold
+      'plus' => const [Color(0xFF9CA3AF), Color(0xFF6B7280)], // Silver
+      'basic' => const [Color(0xFF39BB5E), Color(0xFF008695)], // Green
+      _ => const [Color(0xFFDFBA6B), Color(0xFF9E7D3B)], // Default Gold
+    };
   }
 }

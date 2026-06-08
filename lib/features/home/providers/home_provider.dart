@@ -195,15 +195,13 @@ class HomeProvider extends ChangeNotifier {
   }
 
   List<Property> get featuredProperties {
-    var list = _applySearchOnly(_allProperties);
+    var list = _applySearchOnly(_allProperties).where((p) => !p.isHotelApartment).toList();
     final featured = list.where((p) => p.rating >= 4.5).toList();
-    return _sortHotelFirst(
-      featured.isNotEmpty ? featured : list.take(5).toList(),
-    );
+    return featured.isNotEmpty ? featured : list.take(5).toList();
   }
 
   List<Property> get recentProperties {
-    return _sortHotelFirst(_applySearchOnly(_allProperties));
+    return _applySearchOnly(_allProperties).where((p) => !p.isHotelApartment).toList();
   }
 
   // Used for Home Screen: Only applies Text Search
@@ -363,7 +361,7 @@ class HomeProvider extends ChangeNotifier {
 
   List<String> get uniqueUniversities {
     final Set<String> allUniversities = {};
-    for (var p in _applySearchOnly(_allProperties)) {
+    for (var p in _applySearchOnly(_allProperties).where((p) => !p.isHotelApartment)) {
       for (var u in p.universities) {
         if (u is Map) {
           allUniversities.add(u['ar']?.toString() ?? '');
@@ -376,20 +374,22 @@ class HomeProvider extends ChangeNotifier {
   }
 
   List<Property> getPropertiesForUniversity(String universityName) {
-    final list = _applySearchOnly(_allProperties).where((p) {
+    final list = _applySearchOnly(_allProperties)
+        .where((p) => !p.isHotelApartment)
+        .where((p) {
       return p.universities.any((u) {
         if (u is Map) return u['ar'] == universityName;
         return u.toString() == universityName;
       });
     }).toList();
-    return _sortHotelFirst(list);
+    return list;
   }
 
   List<Property> get filteredByCategory {
-    final base = _applySearchOnly(_allProperties);
+    final base = _applySearchOnly(_allProperties).where((p) => !p.isHotelApartment).toList();
     switch (_selectedCategoryIndex) {
       case 1: // فندقي
-        return base.where((p) => p.isHotelApartment).toList();
+        return [];
       case 3: // شباب
         return base.where((p) {
           final g = p.gender?.toLowerCase();
@@ -409,7 +409,7 @@ class HomeProvider extends ChangeNotifier {
             .where((p) => p.type == 'سرير' || p.bookingMode == 'bed')
             .toList();
       default:
-        return _sortHotelFirst(base);
+        return base;
     }
   }
 }

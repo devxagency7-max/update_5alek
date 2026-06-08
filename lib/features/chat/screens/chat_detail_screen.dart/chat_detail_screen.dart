@@ -183,7 +183,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               ),
 
               // Security Note
-              
 
               // Input Area
               Container(

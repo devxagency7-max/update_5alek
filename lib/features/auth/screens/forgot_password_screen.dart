@@ -37,8 +37,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     try {
       await context.read<AuthProvider>().sendPasswordResetEmail(
-            _emailController.text.trim(),
-          );
+        _emailController.text.trim(),
+      );
 
       if (mounted) {
         CustomSnackBar.show(
@@ -87,158 +87,185 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
         body: Stack(
           children: [
-          // Background Decorations
-          _buildBackgroundDecorations(isDark),
+            // Background Decorations
+            _buildBackgroundDecorations(isDark),
 
-          BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-            child: Container(color: Colors.transparent),
-          ),
+            BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+              child: Container(color: Colors.transparent),
+            ),
 
-          SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight - 32.0,
+            SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0,
+                      vertical: 16.0,
                     ),
-                    child: IntrinsicHeight(
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const SizedBox(height: 20),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight - 32.0,
+                      ),
+                      child: IntrinsicHeight(
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const SizedBox(height: 20),
 
-                            // Lock Icon with Animation
-                            FadeInDown(
-                              delay: const Duration(milliseconds: 200),
-                              child: Center(
-                                child: Container(
-                                  padding: const EdgeInsets.all(20),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.teal.withOpacity(0.1),
-                                  ),
-                                  child: const Icon(
-                                    Icons.lock_open_rounded,
-                                    size: 80,
-                                    color: Colors.teal,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 30),
-
-                            // Title with Shader Gradient
-                            FadeInDown(
-                              delay: const Duration(milliseconds: 300),
-                              child: ShaderMask(
-                                shaderCallback: (bounds) => const LinearGradient(
-                                  colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-                                  begin: Alignment.centerRight,
-                                  end: Alignment.centerLeft,
-                                ).createShader(bounds),
-                                child: Text(
-                                  context.loc.forgotPassword,
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.cairo(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 10),
-
-                            // Subtitle
-                            FadeInDown(
-                              delay: const Duration(milliseconds: 400),
-                              child: Text(
-                                context.loc.forgotPasswordSubtitle,
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.cairo(
-                                  fontSize: 13,
-                                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                  height: 1.5,
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 40),
-
-                            // Email input field
-                            FadeInUp(
-                              delay: const Duration(milliseconds: 500),
-                              child: _buildEmailField(isDark),
-                            ),
-
-                            const SizedBox(height: 30),
-
-                            // Send Link Button
-                            FadeInUp(
-                              delay: const Duration(milliseconds: 600),
-                              child: _buildSendButton(),
-                            ),
-
-                            const Spacer(),
-
-                            FadeInUp(
-                              delay: const Duration(milliseconds: 700),
-                              child: Column(
-                                children: [
-                                  RichText(
-                                    textAlign: TextAlign.center,
-                                    text: TextSpan(
-                                      style: GoogleFonts.cairo(
-                                        fontSize: 12,
-                                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                        height: 1.6,
-                                      ),
-                                      children: [
-                                        TextSpan(text: context.loc.noInboxSupportPrefix),
-                                        TextSpan(
-                                          text: context.loc.contactUsAction,
-                                          style: GoogleFonts.cairo(
-                                            color: Colors.teal,
-                                            fontWeight: FontWeight.bold,
-                                            decoration: TextDecoration.underline,
-                                          ),
-                                          recognizer: TapGestureRecognizer()
-                                            ..onTap = () async {
-                                              final url = Uri.parse(RemoteConfigHelper.supportWebsiteUrl);
-                                              if (await canLaunchUrl(url)) {
-                                                await launchUrl(url, mode: LaunchMode.externalApplication);
-                                              }
-                                            },
-                                        ),
-                                        TextSpan(text: context.loc.noInboxSupportSuffix),
-                                      ],
+                              // Lock Icon with Animation
+                              FadeInDown(
+                                delay: const Duration(milliseconds: 200),
+                                child: Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.teal.withOpacity(0.1),
+                                    ),
+                                    child: const Icon(
+                                      Icons.lock_open_rounded,
+                                      size: 80,
+                                      color: Colors.teal,
                                     ),
                                   ),
-                                  const SizedBox(height: 20),
-                                ],
+                                ),
                               ),
-                            ),
-                          ],
+
+                              const SizedBox(height: 30),
+
+                              // Title with Shader Gradient
+                              FadeInDown(
+                                delay: const Duration(milliseconds: 300),
+                                child: ShaderMask(
+                                  shaderCallback: (bounds) =>
+                                      const LinearGradient(
+                                        colors: [
+                                          Color(0xFF39BB5E),
+                                          Color(0xFF008695),
+                                        ],
+                                        begin: Alignment.centerRight,
+                                        end: Alignment.centerLeft,
+                                      ).createShader(bounds),
+                                  child: Text(
+                                    context.loc.forgotPassword,
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              // Subtitle
+                              FadeInDown(
+                                delay: const Duration(milliseconds: 400),
+                                child: Text(
+                                  context.loc.forgotPasswordSubtitle,
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 13,
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 40),
+
+                              // Email input field
+                              FadeInUp(
+                                delay: const Duration(milliseconds: 500),
+                                child: _buildEmailField(isDark),
+                              ),
+
+                              const SizedBox(height: 30),
+
+                              // Send Link Button
+                              FadeInUp(
+                                delay: const Duration(milliseconds: 600),
+                                child: _buildSendButton(),
+                              ),
+
+                              const Spacer(),
+
+                              FadeInUp(
+                                delay: const Duration(milliseconds: 700),
+                                child: Column(
+                                  children: [
+                                    RichText(
+                                      textAlign: TextAlign.center,
+                                      text: TextSpan(
+                                        style: GoogleFonts.cairo(
+                                          fontSize: 12,
+                                          color: isDark
+                                              ? Colors.grey[400]
+                                              : Colors.grey[600],
+                                          height: 1.6,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text: context
+                                                .loc
+                                                .noInboxSupportPrefix,
+                                          ),
+                                          TextSpan(
+                                            text: context.loc.contactUsAction,
+                                            style: GoogleFonts.cairo(
+                                              color: Colors.teal,
+                                              fontWeight: FontWeight.bold,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                            ),
+                                            recognizer: TapGestureRecognizer()
+                                              ..onTap = () async {
+                                                final url = Uri.parse(
+                                                  RemoteConfigHelper
+                                                      .supportWebsiteUrl,
+                                                );
+                                                if (await canLaunchUrl(url)) {
+                                                  await launchUrl(
+                                                    url,
+                                                    mode: LaunchMode
+                                                        .externalApplication,
+                                                  );
+                                                }
+                                              },
+                                          ),
+                                          TextSpan(
+                                            text: context
+                                                .loc
+                                                .noInboxSupportSuffix,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildBackgroundDecorations(bool isDark) {
     return Stack(
@@ -298,8 +325,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           color: isDark ? Colors.grey[500] : Colors.grey[400],
           fontSize: 13,
         ),
-        prefixIcon: const Icon(Icons.email_outlined, color: Colors.teal, size: 20),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        prefixIcon: const Icon(
+          Icons.email_outlined,
+          color: Colors.teal,
+          size: 20,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         filled: true,
         fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[50],
         border: OutlineInputBorder(
@@ -309,7 +343,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
           borderSide: BorderSide(
-            color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade200,
+            color: isDark
+                ? Colors.white.withOpacity(0.1)
+                : Colors.grey.shade200,
           ),
         ),
         focusedBorder: OutlineInputBorder(

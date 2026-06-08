@@ -1,4 +1,3 @@
-import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:motareb/core/extensions/loc_extension.dart';
@@ -13,9 +12,7 @@ class PropertyVideo extends StatelessWidget {
   Widget build(BuildContext context) {
     if (videoUrl == null || videoUrl!.isEmpty) return const SizedBox.shrink();
 
-    return FadeInUp(
-      delay: const Duration(milliseconds: 150),
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -42,7 +39,6 @@ class PropertyVideo extends StatelessWidget {
           ),
           const SizedBox(height: 30),
         ],
-      ),
     );
   }
 }

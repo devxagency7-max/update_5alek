@@ -18,18 +18,22 @@ class LargePropertyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isFav = context.watch<FavoritesProvider>().isFavorite(property.id);
-
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // NOTE: OpenContainer must not rebuild while its open/close transition is
+    // running, otherwise the framework throws "'!_dirty': is not true".
+    // Scope the AuthProvider/FavoritesProvider listening to small Selectors
+    // (passed as `child`) so OpenContainer itself is built only once.
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: GestureDetector(
         onTap: () {
           if (!GuestChecker.check(context)) return;
         },
-        child: AbsorbPointer(
-          absorbing: context.watch<AuthProvider>().isGuest,
+        child: Selector<AuthProvider, bool>(
+          selector: (_, auth) => auth.isGuest,
+          builder: (context, isGuest, child) =>
+              AbsorbPointer(absorbing: isGuest, child: child),
           child: OpenContainer(
             transitionType: ContainerTransitionType.fade,
             transitionDuration: const Duration(milliseconds: 500),
@@ -43,8 +47,8 @@ class LargePropertyCard extends StatelessWidget {
               side: property.isHotelApartment
                   ? const BorderSide(color: Color(0xFFDFBA6B), width: 1.5)
                   : (isDark
-                      ? const BorderSide(color: Color(0xFF2A3038))
-                      : BorderSide.none),
+                        ? const BorderSide(color: Color(0xFF2A3038))
+                        : BorderSide.none),
             ),
             openBuilder: (context, _) =>
                 PropertyDetailsScreen(property: property),
@@ -137,7 +141,9 @@ class LargePropertyCard extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    property.isVerified ? 'فندقية موثقة ✨' : 'شقة فندقية فاخرة ✨',
+                                    property.isVerified
+                                        ? 'فندقية موثقة ✨'
+                                        : 'شقة فندقية فاخرة ✨',
                                     style: GoogleFonts.cairo(
                                       color: Colors.black,
                                       fontSize: 12,
@@ -183,28 +189,34 @@ class LargePropertyCard extends StatelessWidget {
                         Positioned(
                           top: 15,
                           right: 15,
-                          child: GestureDetector(
-                            onTap: () {
-                              if (GuestChecker.check(context)) {
-                                context
-                                    .read<FavoritesProvider>()
-                                    .toggleFavorite(property);
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.black.withOpacity(0.5)
-                                    : Colors.white,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                isFav ? Icons.favorite : Icons.favorite_border,
-                                size: 20,
-                                color: isFav ? Colors.red : Colors.grey,
+                          child: Selector<FavoritesProvider, bool>(
+                            selector: (_, favs) =>
+                                favs.isFavorite(property.id),
+                            builder: (context, isFav, _) => GestureDetector(
+                              onTap: () {
+                                if (GuestChecker.check(context)) {
+                                  context
+                                      .read<FavoritesProvider>()
+                                      .toggleFavorite(property);
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.black.withOpacity(0.5)
+                                      : Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  isFav
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  size: 20,
+                                  color: isFav ? Colors.red : Colors.grey,
+                                ),
                               ),
                             ),
                           ),
@@ -246,7 +258,9 @@ class LargePropertyCard extends StatelessWidget {
                                             ? context.loc.bed
                                             : context.loc.divided),
                                   style: GoogleFonts.cairo(
-                                    color: property.isHotelApartment ? Colors.black : Colors.white,
+                                    color: property.isHotelApartment
+                                        ? Colors.black
+                                        : Colors.white,
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -295,14 +309,20 @@ class LargePropertyCard extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               ShaderMask(
-                                shaderCallback: (bounds) =>
-                                    LinearGradient(
-                                      colors: property.isHotelApartment
-                                          ? [const Color(0xFFF3E5AB), const Color(0xFFDFBA6B), const Color(0xFF9E7D3B)]
-                                          : [const Color(0xFF39BB5E), const Color(0xFF008695)],
-                                      begin: Alignment.centerRight,
-                                      end: Alignment.centerLeft,
-                                    ).createShader(bounds),
+                                shaderCallback: (bounds) => LinearGradient(
+                                  colors: property.isHotelApartment
+                                      ? [
+                                          const Color(0xFFF3E5AB),
+                                          const Color(0xFFDFBA6B),
+                                          const Color(0xFF9E7D3B),
+                                        ]
+                                      : [
+                                          const Color(0xFF39BB5E),
+                                          const Color(0xFF008695),
+                                        ],
+                                  begin: Alignment.centerRight,
+                                  end: Alignment.centerLeft,
+                                ).createShader(bounds),
                                 child: Text(
                                   '${NumberFormat.decimalPattern().format(property.price)} ${context.loc.currency}',
                                   style: GoogleFonts.cairo(
@@ -321,8 +341,12 @@ class LargePropertyCard extends StatelessWidget {
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: property.isHotelApartment
-                                  ? (isDark ? const Color(0xFFF9E8B9) : Colors.black)
-                                  : Theme.of(context).textTheme.bodyLarge?.color,
+                                  ? (isDark
+                                        ? const Color(0xFFF9E8B9)
+                                        : Colors.black)
+                                  : Theme.of(
+                                      context,
+                                    ).textTheme.bodyLarge?.color,
                             ),
                           ),
                           const SizedBox(height: 5),
@@ -334,7 +358,9 @@ class LargePropertyCard extends StatelessWidget {
                                 child: Icon(
                                   Icons.location_on_outlined,
                                   size: 16,
-                                  color: property.isHotelApartment ? const Color(0xFFDFBA6B) : Colors.grey,
+                                  color: property.isHotelApartment
+                                      ? const Color(0xFFDFBA6B)
+                                      : Colors.grey,
                                 ),
                               ),
                               const SizedBox(width: 4),
@@ -343,7 +369,9 @@ class LargePropertyCard extends StatelessWidget {
                                   property.localizedLocation(context),
                                   style: GoogleFonts.cairo(
                                     color: property.isHotelApartment
-                                        ? (isDark ? Colors.grey.shade400 : Colors.grey.shade600)
+                                        ? (isDark
+                                              ? Colors.grey.shade400
+                                              : Colors.grey.shade600)
                                         : Colors.grey,
                                   ),
                                 ),

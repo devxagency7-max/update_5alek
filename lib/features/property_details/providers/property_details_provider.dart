@@ -267,8 +267,11 @@ class PropertyDetailsProvider extends ChangeNotifier {
     _fetchContactNumbers();
 
     try {
+      // TAJ HOUSE hotel rooms live in `hotel_properties`, not `properties`.
+      final collection =
+          _property.isHotelApartment ? 'hotel_properties' : 'properties';
       final doc = await FirebaseFirestore.instance
-          .collection('properties')
+          .collection(collection)
           .doc(_property.id)
           .get();
       if (doc.exists && doc.data() != null) {

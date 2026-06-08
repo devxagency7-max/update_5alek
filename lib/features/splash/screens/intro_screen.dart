@@ -306,7 +306,9 @@ class _IntroScreenState extends State<IntroScreen> {
           child: Container(
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF1A1F26) : Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(30),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.15),
@@ -361,10 +363,10 @@ class _IntroScreenState extends State<IntroScreen> {
                             await FirebaseFirestore.instance
                                 .collection('referrals')
                                 .add({
-                              'source': opt['key'],
-                              'sourceAr': opt['labelAr'],
-                              'createdAt': FieldValue.serverTimestamp(),
-                            });
+                                  'source': opt['key'],
+                                  'sourceAr': opt['labelAr'],
+                                  'createdAt': FieldValue.serverTimestamp(),
+                                });
                           } catch (e) {
                             // Suppress error so user is never blocked
                           }
@@ -373,7 +375,9 @@ class _IntroScreenState extends State<IntroScreen> {
                         borderRadius: BorderRadius.circular(15),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 16),
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
                           decoration: BoxDecoration(
                             border: Border.all(
                               color: isDark
@@ -390,7 +394,9 @@ class _IntroScreenState extends State<IntroScreen> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: (opt['color'] as Color).withOpacity(0.1),
+                                  color: (opt['color'] as Color).withOpacity(
+                                    0.1,
+                                  ),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
@@ -406,14 +412,18 @@ class _IntroScreenState extends State<IntroScreen> {
                                   style: GoogleFonts.cairo(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: isDark ? Colors.white : Colors.black87,
+                                    color: isDark
+                                        ? Colors.white
+                                        : Colors.black87,
                                   ),
                                 ),
                               ),
                               Icon(
                                 Icons.arrow_forward_ios_rounded,
                                 size: 14,
-                                color: isDark ? Colors.grey[700] : Colors.grey[400],
+                                color: isDark
+                                    ? Colors.grey[700]
+                                    : Colors.grey[400],
                               ),
                             ],
                           ),

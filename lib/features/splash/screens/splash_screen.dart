@@ -38,14 +38,14 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _checkFirstRun() async {
     debugPrint("Splash: Starting navigation check...");
-    
+
     // Create a timer for the minimum splash time (3 seconds)
     final splashTimer = Future.delayed(const Duration(seconds: 3));
 
     try {
       debugPrint("Splash: Waiting for SharedPreferences...");
       await _sharedPrefsFuture;
-      
+
       final bool seenIntro = _prefs.getBool('seenIntro') ?? false;
       debugPrint("Splash: seenIntro value: $seenIntro");
 
@@ -76,31 +76,12 @@ class _SplashScreenState extends State<SplashScreen> {
           authRetry++;
         }
 
+        // Ensure the minimum splash time has passed
+        await splashTimer;
+
         // Check if user is already logged in
         if (authProvider.isAuthenticated) {
-          debugPrint("Splash: User logged in, waiting for home data...");
-
-          if (mounted) {
-            final homeProvider = Provider.of<HomeProvider>(
-              context,
-              listen: false,
-            );
-
-            // Wait for data to load if it's still loading
-            // We give it a max of 4 more seconds (since it loaded concurrently during splash)
-            int retryCount = 0;
-            while (homeProvider.isLoading && retryCount < 20) {
-              await Future.delayed(const Duration(milliseconds: 200));
-              retryCount++;
-            }
-          }
-
-          // Ensure the minimum splash time has passed
-          await splashTimer;
-
-          debugPrint(
-            "Splash: Home data ready or timeout, navigating to HomeScreen.",
-          );
+          debugPrint("Splash: User logged in, navigating to HomeScreen.");
           if (!mounted) return;
           Navigator.of(context).pushReplacement(
             PageRouteBuilder(
@@ -114,9 +95,6 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
           );
         } else {
-          // Ensure the minimum splash time has passed
-          await splashTimer;
-
           debugPrint("Splash: No user logged in, navigating to LoginScreen.");
           if (!mounted) return;
           Navigator.of(context).pushReplacement(

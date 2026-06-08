@@ -131,7 +131,7 @@ class _FilterScreenState extends State<FilterScreen> {
                 shadowColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  ),
+                ),
               ),
               child: Text(
                 context.loc.applyFilter,

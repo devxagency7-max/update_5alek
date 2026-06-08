@@ -1,4 +1,3 @@
-import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:motareb/core/extensions/loc_extension.dart';
@@ -76,9 +75,7 @@ class PropertyBooking extends StatelessWidget {
   }
 
   Widget _buildBedMode(BuildContext context) {
-    return FadeInUp(
-      delay: const Duration(milliseconds: 200),
-      child: Container(
+    return Container(
         margin: const EdgeInsets.only(bottom: 25),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -94,9 +91,7 @@ class PropertyBooking extends StatelessWidget {
                   ),
                 ],
           border: Border.all(
-            color: property.isHotelApartment
-                ? const Color(0xFFDFBA6B).withValues(alpha: 0.3)
-                : const Color(0xFF39BB5E).withValues(alpha: 0.3),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
           ),
         ),
         child: Column(
@@ -107,12 +102,13 @@ class PropertyBooking extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: property.isHotelApartment
-                        ? const Color(0xFFDFBA6B).withValues(alpha: 0.1)
-                        : const Color(0xFF39BB5E).withValues(alpha: 0.1),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.bed, color: property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF39BB5E)),
+                  child: Icon(
+                    Icons.bed,
+                    color: Theme.of(context).primaryColor,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -133,10 +129,9 @@ class PropertyBooking extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             // Styled Counter
-            FadeInUp(
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                margin: const EdgeInsets.only(bottom: 25),
+            Container(
+              padding: const EdgeInsets.all(20),
+              margin: const EdgeInsets.only(bottom: 25),
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardTheme.color,
                   borderRadius: BorderRadius.circular(15),
@@ -187,7 +182,9 @@ class PropertyBooking extends StatelessWidget {
                             style: GoogleFonts.cairo(
                               fontSize: 24,
                               fontWeight: FontWeight.w900,
-                              color: property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
+                              color: property.isHotelApartment
+                                  ? Theme.of(context).primaryColor
+                                  : Theme.of(context).colorScheme.secondary,
                             ),
                           ),
                         ),
@@ -217,7 +214,7 @@ class PropertyBooking extends StatelessWidget {
                         valueColor: AlwaysStoppedAnimation<Color>(
                           property.totalBeds - selectedBedCount < 2
                               ? Colors.orange
-                              : (property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF39BB5E)),
+                              : Theme.of(context).primaryColor,
                         ),
                         minHeight: 6,
                       ),
@@ -244,28 +241,28 @@ class PropertyBooking extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
             ),
           ],
         ),
-      ),
     );
   }
 
   Widget _buildFullApartmentFixed(BuildContext context) {
-    return FadeInUp(
-      child: Container(
+    if (property.isHotelApartment) {
+      return const SizedBox.shrink();
+    }
+    return Container(
         margin: const EdgeInsets.only(bottom: 25),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: property.isHotelApartment
-              ? const Color(0xFFDFBA6B).withValues(alpha: 0.08)
-              : const Color(0xFF008695).withValues(alpha: 0.08),
+          color: (property.isHotelApartment
+              ? Theme.of(context).primaryColor
+              : Theme.of(context).colorScheme.secondary).withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(15),
           border: Border.all(
-            color: property.isHotelApartment
-                ? const Color(0xFFDFBA6B).withValues(alpha: 0.3)
-                : const Color(0xFF008695).withValues(alpha: 0.3),
+            color: (property.isHotelApartment
+                ? Theme.of(context).primaryColor
+                : Theme.of(context).colorScheme.secondary).withValues(alpha: 0.3),
           ),
         ),
         child: Column(
@@ -275,14 +272,16 @@ class PropertyBooking extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: property.isHotelApartment
-                        ? const Color(0xFFDFBA6B).withValues(alpha: 0.1)
-                        : const Color(0xFF008695).withValues(alpha: 0.1),
+                    color: (property.isHotelApartment
+                        ? Theme.of(context).primaryColor
+                        : Theme.of(context).colorScheme.secondary).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.home_work_rounded,
-                    color: property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
+                    color: property.isHotelApartment
+                        ? Theme.of(context).primaryColor
+                        : Theme.of(context).colorScheme.secondary,
                     size: 28,
                   ),
                 ),
@@ -296,7 +295,9 @@ class PropertyBooking extends StatelessWidget {
                         style: GoogleFonts.cairo(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
-                          color: property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
+                          color: property.isHotelApartment
+                              ? Theme.of(context).primaryColor
+                              : Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                       Text(
@@ -312,43 +313,45 @@ class PropertyBooking extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            // Composition Summary
-            Row(
-              children: [
-                Expanded(
-                  child: _buildCompositionCard(
-                    context,
-                    icon: Icons.meeting_room_rounded,
-                    count: property.rooms.length.toString(),
-                    label: context.loc.rooms,
+            if (!property.isHotelApartment) ...[
+              // Composition Summary
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildCompositionCard(
+                      context,
+                      icon: Icons.meeting_room_rounded,
+                      count: property.rooms.length.toString(),
+                      label: context.loc.rooms,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildCompositionCard(
-                    context,
-                    icon: Icons.bed_rounded,
-                    count: property.rooms
-                        .fold<int>(
-                          0,
-                          (sum, room) => sum + ((room['beds'] as int?) ?? 1),
-                        )
-                        .toString(),
-                    label: context.loc.beds,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildCompositionCard(
+                      context,
+                      icon: Icons.bed_rounded,
+                      count: property.rooms
+                          .fold<int>(
+                            0,
+                            (sum, room) => sum + ((room['beds'] as int?) ?? 1),
+                          )
+                          .toString(),
+                      label: context.loc.beds,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildCompositionCard(
-                    context,
-                    icon: Icons.bathtub_outlined,
-                    count: property.bathroomsCount.toString(),
-                    label: context.loc.bathrooms,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildCompositionCard(
+                      context,
+                      icon: Icons.bathtub_outlined,
+                      count: property.bathroomsCount.toString(),
+                      label: context.loc.bathrooms,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 15),
+                ],
+              ),
+              const SizedBox(height: 15),
+            ],
             // Room Types Breakdown
             Builder(
               builder: (context) {
@@ -381,9 +384,9 @@ class PropertyBooking extends StatelessWidget {
                             : Colors.white,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: property.isHotelApartment
-                              ? const Color(0xFFDFBA6B).withValues(alpha: 0.1)
-                              : const Color(0xFF008695).withValues(alpha: 0.1),
+                          color: (property.isHotelApartment
+                              ? Theme.of(context).primaryColor
+                              : Theme.of(context).colorScheme.secondary).withValues(alpha: 0.1),
                         ),
                       ),
                       child: Row(
@@ -393,7 +396,9 @@ class PropertyBooking extends StatelessWidget {
                             width: 6,
                             height: 6,
                             decoration: BoxDecoration(
-                              color: property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
+                              color: property.isHotelApartment
+                                  ? Theme.of(context).primaryColor
+                                  : Theme.of(context).colorScheme.secondary,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -403,7 +408,9 @@ class PropertyBooking extends StatelessWidget {
                             style: GoogleFonts.cairo(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
+                              color: property.isHotelApartment
+                                  ? Theme.of(context).primaryColor
+                                  : Theme.of(context).colorScheme.secondary,
                             ),
                           ),
                         ],
@@ -415,7 +422,6 @@ class PropertyBooking extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 
@@ -449,16 +455,16 @@ class PropertyBooking extends StatelessWidget {
           color: onPressed == null
               ? Colors.grey.shade200
               : (property.isHotelApartment
-                  ? const Color(0xFFDFBA6B).withValues(alpha: 0.5)
-                  : const Color(0xFF008695).withValues(alpha: 0.5)),
+                    ? Theme.of(context).primaryColor.withValues(alpha: 0.5)
+                    : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
         ),
         boxShadow: onPressed == null
             ? []
             : [
                 BoxShadow(
-                  color: property.isHotelApartment
-                      ? const Color(0xFFDFBA6B).withValues(alpha: 0.1)
-                      : const Color(0xFF008695).withValues(alpha: 0.1),
+                  color: (property.isHotelApartment
+                      ? Theme.of(context).primaryColor
+                      : Theme.of(context).colorScheme.secondary).withValues(alpha: 0.1),
                   blurRadius: 5,
                   offset: const Offset(0, 2),
                 ),
@@ -469,7 +475,9 @@ class PropertyBooking extends StatelessWidget {
           icon,
           color: onPressed == null
               ? Colors.grey
-              : (property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695)),
+              : (property.isHotelApartment
+                    ? Theme.of(context).primaryColor
+                    : Theme.of(context).colorScheme.secondary),
         ),
         onPressed: onPressed,
       ),
@@ -498,7 +506,9 @@ class PropertyBooking extends StatelessWidget {
             style: GoogleFonts.cairo(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: property.isHotelApartment ? const Color(0xFFDFBA6B) : const Color(0xFF008695),
+              color: property.isHotelApartment
+                ? Theme.of(context).primaryColor
+                : Theme.of(context).colorScheme.secondary,
             ),
           ),
           Text(
@@ -569,81 +579,88 @@ class UnitSelectionWidget extends StatelessWidget {
         ),
         const SizedBox(height: 15),
 
-        // Header: "Whole Apartment" Option
-        GestureDetector(
-          onTap: () {
-            if (isReadOnly) return;
-            if (property.bookedUnits.isNotEmpty) {
-              return; // Cannot book whole apartment if partially booked
-            }
-            onSelectionChanged(true, null);
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-            margin: const EdgeInsets.only(bottom: 15),
-            decoration: BoxDecoration(
-              gradient: isWholeApartment
-                  ? (property.isHotelApartment
-                      ? const LinearGradient(
-                          colors: [Color(0xFFDFBA6B), Color(0xFF9E7D3B)],
-                        )
-                      : const LinearGradient(
-                          colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-                        ))
-                  : null,
-              color: isWholeApartment
-                  ? null
-                  : (property.bookedUnits.isNotEmpty
-                        ? Theme.of(context).disabledColor.withOpacity(0.1)
-                        : Theme.of(context).cardTheme.color),
-              borderRadius: BorderRadius.circular(12),
-              border: isWholeApartment
-                  ? null
-                  : Border.all(
-                      color: Theme.of(context).dividerColor,
-                      width: 1.5,
-                    ),
-              boxShadow: isWholeApartment
-                  ? [
-                      BoxShadow(
-                        color: property.isHotelApartment
-                            ? const Color(0xFF9E7D3B).withOpacity(0.3)
-                            : const Color(0xFF008695).withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
+        if (!property.isHotelApartment) ...[
+          // Header: "Whole Apartment" Option
+          GestureDetector(
+            onTap: () {
+              if (isReadOnly) return;
+              if (property.bookedUnits.isNotEmpty) {
+                return; // Cannot book whole apartment if partially booked
+              }
+              onSelectionChanged(true, null);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+              margin: const EdgeInsets.only(bottom: 15),
+              decoration: BoxDecoration(
+                gradient: isWholeApartment
+                    ? LinearGradient(
+                        colors: [
+                          Theme.of(context).primaryColor,
+                          Theme.of(context).colorScheme.secondary,
+                        ],
+                      )
+                    : null,
+                color: isWholeApartment
+                    ? null
+                    : (property.bookedUnits.isNotEmpty
+                          ? Theme.of(context).disabledColor.withOpacity(0.1)
+                          : Theme.of(context).cardTheme.color),
+                borderRadius: BorderRadius.circular(12),
+                border: isWholeApartment
+                    ? null
+                    : Border.all(
+                        color: Theme.of(context).dividerColor,
+                        width: 1.5,
                       ),
-                    ]
-                  : null,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  property.bookedUnits.isNotEmpty
-                      ? "غير متاح (محجوز جزئياً)"
-                      : context.loc.bookApartmentFull,
-                  style: GoogleFonts.cairo(
-                    color: isWholeApartment
-                        ? (property.isHotelApartment ? Colors.black : Colors.white)
-                        : (property.bookedUnits.isNotEmpty
-                              ? Theme.of(context).disabledColor
-                              : Theme.of(context).textTheme.bodyMedium?.color),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                boxShadow: isWholeApartment
+                    ? [
+                        BoxShadow(
+                          color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    property.bookedUnits.isNotEmpty
+                        ? "غير متاح (محجوز جزئياً)"
+                        : context.loc.bookApartmentFull,
+                    style: GoogleFonts.cairo(
+                      color: isWholeApartment
+                          ? ((property.isHotelApartment && property.tier == 'premium')
+                                ? Colors.black
+                                : Colors.white)
+                          : (property.bookedUnits.isNotEmpty
+                                ? Theme.of(context).disabledColor
+                                : Theme.of(context).textTheme.bodyMedium?.color),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-                if (isWholeApartment)
-                  Icon(Icons.check_circle, color: property.isHotelApartment ? Colors.black : Colors.white, size: 22)
-                else if (property.bookedUnits.isNotEmpty)
-                  Icon(
-                    Icons.block,
-                    color: Theme.of(context).disabledColor,
-                    size: 22,
-                  ),
-              ],
+                  if (isWholeApartment)
+                    Icon(
+                      Icons.check_circle,
+                      color: (property.isHotelApartment && property.tier == 'premium')
+                          ? Colors.black
+                          : Colors.white,
+                      size: 22,
+                    )
+                  else if (property.bookedUnits.isNotEmpty)
+                    Icon(
+                      Icons.block,
+                      color: Theme.of(context).disabledColor,
+                      size: 22,
+                    ),
+                ],
+              ),
             ),
           ),
-        ),
+        ],
         if (showError)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
@@ -848,17 +865,14 @@ class UnitSelectionWidget extends StatelessWidget {
               opacity: isSelected ? 1.0 : 0.0,
               child: Container(
                 decoration: BoxDecoration(
-                  gradient: property.isHotelApartment
-                      ? const LinearGradient(
-                          colors: [Color(0xFFDFBA6B), Color(0xFF9E7D3B)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : const LinearGradient(
-                          colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).primaryColor,
+                      Theme.of(context).colorScheme.secondary,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
               ),
             ),
@@ -878,7 +892,9 @@ class UnitSelectionWidget extends StatelessWidget {
                   Icon(
                     isSelected ? Icons.check_circle : Icons.add_circle_outline,
                     color: isSelected
-                        ? (property.isHotelApartment ? Colors.black : Colors.white)
+                        ? ((property.isHotelApartment && property.tier == 'premium')
+                              ? Colors.black
+                              : Colors.white)
                         : Colors.grey.shade400,
                     size: isSmall ? 18 : 22,
                   ),
@@ -891,8 +907,10 @@ class UnitSelectionWidget extends StatelessWidget {
                     color: isDisabled
                         ? Theme.of(context).disabledColor
                         : (isSelected
-                            ? (property.isHotelApartment ? Colors.black : Colors.white)
-                            : Colors.grey.shade600),
+                              ? ((property.isHotelApartment && property.tier == 'premium')
+                                    ? Colors.black
+                                    : Colors.white)
+                              : Colors.grey.shade600),
                   ),
                 ),
               ],

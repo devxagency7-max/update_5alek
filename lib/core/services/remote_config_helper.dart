@@ -9,18 +9,22 @@ class RemoteConfigHelper {
   static String _supportPhone = '01129455770';
   static bool _showPhoneField = true;
   static bool _showRamadanTheme = false;
-  static String _devXLogoUrl = 'https://pub-5fe3afd0e7d64de7af15bed6205d045e.r2.dev/devx.png';
+  static String _devXLogoUrl =
+      'https://pub-5fe3afd0e7d64de7af15bed6205d045e.r2.dev/devx.png';
   static String _supportWebsiteUrl = 'https://khaleek-qoraeb.vercel.app/';
   static bool _showWalletPayment = true;
   static bool _showCardPayment = true;
 
-
   // Production Ad Unit IDs fallbacks
-  static String _androidBannerAdUnitId = 'ca-app-pub-2375099279419840/5691604828';
+  static String _androidBannerAdUnitId =
+      'ca-app-pub-2375099279419840/5691604828';
   static String _iosBannerAdUnitId = 'ca-app-pub-2375099279419840/5733680850';
-  static String _androidInterstitialAdUnitId = 'ca-app-pub-2375099279419840/5514854314';
-  static String _iosInterstitialAdUnitId = 'ca-app-pub-2375099279419840/7909144406';
-  static String _androidNativeAdUnitId = 'ca-app-pub-2375099279419840/1300277132';
+  static String _androidInterstitialAdUnitId =
+      'ca-app-pub-2375099279419840/5514854314';
+  static String _iosInterstitialAdUnitId =
+      'ca-app-pub-2375099279419840/7909144406';
+  static String _androidNativeAdUnitId =
+      'ca-app-pub-2375099279419840/1300277132';
   static String _iosNativeAdUnitId = 'ca-app-pub-2375099279419840/4688192491';
 
   // Synced high-performance Getters
@@ -34,7 +38,6 @@ class RemoteConfigHelper {
   static String get supportWebsiteUrl => _supportWebsiteUrl;
   static bool get showWalletPayment => _showWalletPayment;
   static bool get showCardPayment => _showCardPayment;
-
 
   static String get androidBannerAdUnitId => _androidBannerAdUnitId;
   static String get iosBannerAdUnitId => _iosBannerAdUnitId;
@@ -52,19 +55,32 @@ class RemoteConfigHelper {
       _supportEmail = prefs.getString('rc_support_email') ?? _supportEmail;
       _supportPhone = prefs.getString('rc_support_phone') ?? _supportPhone;
       _showPhoneField = prefs.getBool('rc_show_phone_field') ?? _showPhoneField;
-      _showRamadanTheme = prefs.getBool('rc_show_ramadan_theme') ?? _showRamadanTheme;
+      _showRamadanTheme =
+          prefs.getBool('rc_show_ramadan_theme') ?? _showRamadanTheme;
       _devXLogoUrl = prefs.getString('rc_dev_x_logo_url') ?? _devXLogoUrl;
-      _supportWebsiteUrl = prefs.getString('rc_support_website_url') ?? _supportWebsiteUrl;
-      _showWalletPayment = prefs.getBool('rc_show_wallet_payment') ?? _showWalletPayment;
-      _showCardPayment = prefs.getBool('rc_show_card_payment') ?? _showCardPayment;
+      _supportWebsiteUrl =
+          prefs.getString('rc_support_website_url') ?? _supportWebsiteUrl;
+      _showWalletPayment =
+          prefs.getBool('rc_show_wallet_payment') ?? _showWalletPayment;
+      _showCardPayment =
+          prefs.getBool('rc_show_card_payment') ?? _showCardPayment;
 
-
-      _androidBannerAdUnitId = prefs.getString('rc_android_banner_ad_unit_id') ?? _androidBannerAdUnitId;
-      _iosBannerAdUnitId = prefs.getString('rc_ios_banner_ad_unit_id') ?? _iosBannerAdUnitId;
-      _androidInterstitialAdUnitId = prefs.getString('rc_android_interstitial_ad_unit_id') ?? _androidInterstitialAdUnitId;
-      _iosInterstitialAdUnitId = prefs.getString('rc_ios_interstitial_ad_unit_id') ?? _iosInterstitialAdUnitId;
-      _androidNativeAdUnitId = prefs.getString('rc_android_native_ad_unit_id') ?? _androidNativeAdUnitId;
-      _iosNativeAdUnitId = prefs.getString('rc_ios_native_ad_unit_id') ?? _iosNativeAdUnitId;
+      _androidBannerAdUnitId =
+          prefs.getString('rc_android_banner_ad_unit_id') ??
+          _androidBannerAdUnitId;
+      _iosBannerAdUnitId =
+          prefs.getString('rc_ios_banner_ad_unit_id') ?? _iosBannerAdUnitId;
+      _androidInterstitialAdUnitId =
+          prefs.getString('rc_android_interstitial_ad_unit_id') ??
+          _androidInterstitialAdUnitId;
+      _iosInterstitialAdUnitId =
+          prefs.getString('rc_ios_interstitial_ad_unit_id') ??
+          _iosInterstitialAdUnitId;
+      _androidNativeAdUnitId =
+          prefs.getString('rc_android_native_ad_unit_id') ??
+          _androidNativeAdUnitId;
+      _iosNativeAdUnitId =
+          prefs.getString('rc_ios_native_ad_unit_id') ?? _iosNativeAdUnitId;
     } catch (_) {
       // Fail silently, fallbacks are already set
     }
@@ -89,7 +105,6 @@ class RemoteConfigHelper {
       _showWalletPayment = rc.getBool('show_wallet_payment');
       _showCardPayment = rc.getBool('show_card_payment');
 
-
       _devXLogoUrl = rc.getString('dev_x_logo_url').isEmpty
           ? _devXLogoUrl
           : rc.getString('dev_x_logo_url');
@@ -101,10 +116,12 @@ class RemoteConfigHelper {
       _iosBannerAdUnitId = rc.getString('ios_banner_ad_unit_id').isEmpty
           ? _iosBannerAdUnitId
           : rc.getString('ios_banner_ad_unit_id');
-      _androidInterstitialAdUnitId = rc.getString('android_interstitial_ad_unit_id').isEmpty
+      _androidInterstitialAdUnitId =
+          rc.getString('android_interstitial_ad_unit_id').isEmpty
           ? _androidInterstitialAdUnitId
           : rc.getString('android_interstitial_ad_unit_id');
-      _iosInterstitialAdUnitId = rc.getString('ios_interstitial_ad_unit_id').isEmpty
+      _iosInterstitialAdUnitId =
+          rc.getString('ios_interstitial_ad_unit_id').isEmpty
           ? _iosInterstitialAdUnitId
           : rc.getString('ios_interstitial_ad_unit_id');
       _androidNativeAdUnitId = rc.getString('android_native_ad_unit_id').isEmpty
@@ -126,12 +143,23 @@ class RemoteConfigHelper {
       await prefs.setBool('rc_show_wallet_payment', _showWalletPayment);
       await prefs.setBool('rc_show_card_payment', _showCardPayment);
 
-
-      await prefs.setString('rc_android_banner_ad_unit_id', _androidBannerAdUnitId);
+      await prefs.setString(
+        'rc_android_banner_ad_unit_id',
+        _androidBannerAdUnitId,
+      );
       await prefs.setString('rc_ios_banner_ad_unit_id', _iosBannerAdUnitId);
-      await prefs.setString('rc_android_interstitial_ad_unit_id', _androidInterstitialAdUnitId);
-      await prefs.setString('rc_ios_interstitial_ad_unit_id', _iosInterstitialAdUnitId);
-      await prefs.setString('rc_android_native_ad_unit_id', _androidNativeAdUnitId);
+      await prefs.setString(
+        'rc_android_interstitial_ad_unit_id',
+        _androidInterstitialAdUnitId,
+      );
+      await prefs.setString(
+        'rc_ios_interstitial_ad_unit_id',
+        _iosInterstitialAdUnitId,
+      );
+      await prefs.setString(
+        'rc_android_native_ad_unit_id',
+        _androidNativeAdUnitId,
+      );
       await prefs.setString('rc_ios_native_ad_unit_id', _iosNativeAdUnitId);
     } catch (_) {
       // Fail silently

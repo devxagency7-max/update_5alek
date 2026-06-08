@@ -1,12 +1,12 @@
-import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:motareb/core/extensions/loc_extension.dart';
-import 'package:motareb/core/theme/app_theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/models/property_model.dart';
 import '../providers/property_details_provider.dart';
+import '../../home/providers/home_provider.dart';
 
 import '../../../utils/guest_checker.dart';
 
@@ -20,9 +20,7 @@ class PropertyOwner extends StatelessWidget {
     final contactNumbers = provider.contactNumbers;
     final isLoading = provider.loadingContacts;
 
-    return FadeInUp(
-      delay: const Duration(milliseconds: 200),
-      child: Container(
+    return Container(
         margin: const EdgeInsets.only(bottom: 25),
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
@@ -47,25 +45,29 @@ class PropertyOwner extends StatelessWidget {
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: provider.property.isHotelApartment
-                    ? const LinearGradient(
-                        colors: [Color(0xFFDFBA6B), Color(0xFF9E7D3B)],
-                      )
-                    : AppTheme.primaryGradient,
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).colorScheme.secondary,
+                  ],
+                ),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.phone_in_talk_rounded,
-                color: provider.property.isHotelApartment ? Colors.black : Colors.white,
+                color: (provider.property.isHotelApartment && provider.property.tier == 'premium')
+                    ? Colors.black
+                    : Colors.white,
                 size: 25,
               ),
             ),
             title: ShaderMask(
-              shaderCallback: (bounds) => provider.property.isHotelApartment
-                  ? const LinearGradient(
-                      colors: [Color(0xFFDFBA6B), Color(0xFF9E7D3B)],
-                    ).createShader(bounds)
-                  : AppTheme.primaryGradient.createShader(bounds),
+              shaderCallback: (bounds) => LinearGradient(
+                colors: [
+                  Theme.of(context).primaryColor,
+                  Theme.of(context).colorScheme.secondary,
+                ],
+              ).createShader(bounds),
               child: Text(
                 context.loc.contactUs,
                 style: GoogleFonts.cairo(
@@ -84,19 +86,82 @@ class PropertyOwner extends StatelessWidget {
                   ),
                 )
               else if (contactNumbers.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(15.0),
-                  child: Text(
-                    context.loc.noNumbersAvailable,
-                    style: GoogleFonts.cairo(color: Colors.grey, fontSize: 14),
-                  ),
+                Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(15, 15, 15, 0),
+                      child: Text(
+                        context.loc.noNumbersAvailable,
+                        style: GoogleFonts.cairo(color: Colors.grey, fontSize: 14),
+                      ),
+                    ),
+                    _buildChatButton(context, provider.property),
+                  ],
                 )
               else
                 Column(
-                  children: contactNumbers.map((data) {
-                    return _buildContactNumberItem(context, data['number'], provider.property.isHotelApartment);
-                  }).toList(),
+                  children: [
+                    ...contactNumbers.map((data) {
+                      return _buildContactNumberItem(
+                        context,
+                        data['number'],
+                        provider.property,
+                      );
+                    }),
+                    // زرار الشات
+                    _buildChatButton(context, provider.property),
+                  ],
                 ),
+            ],
+          ),
+        ),
+    );
+  }
+
+  Widget _buildChatButton(BuildContext context, Property property) {
+    final tierColors = _getTierGradient(property);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      child: GestureDetector(
+        onTap: () {
+          if (!GuestChecker.check(context)) return;
+          // الرجوع للـ HomeScreen وفتح تاب الشات (index 2)
+          context.read<HomeProvider>().setIndex(2);
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        },
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: tierColors,
+              begin: Alignment.centerRight,
+              end: Alignment.centerLeft,
+            ),
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: tierColors.last.withOpacity(0.35),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Text(
+                'تواصل معنا عبر الشات',
+                style: GoogleFonts.cairo(
+                  color: (property.isHotelApartment && property.tier == 'premium')
+                      ? Colors.black
+                      : Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
         ),
@@ -104,7 +169,23 @@ class PropertyOwner extends StatelessWidget {
     );
   }
 
-  Widget _buildContactNumberItem(BuildContext context, String number, bool isHotelApartment) {
+  List<Color> _getTierGradient(Property property) {
+    if (!property.isHotelApartment) {
+      return const [Color(0xFF39BB5E), Color(0xFF008695)];
+    }
+    return switch (property.tier?.toLowerCase()) {
+      'premium' => const [Color(0xFFDFBA6B), Color(0xFF9E7D3B)],
+      'plus'    => const [Color(0xFF9CA3AF), Color(0xFF6B7280)],
+      'basic'   => const [Color(0xFF39BB5E), Color(0xFF008695)],
+      _         => const [Color(0xFF39BB5E), Color(0xFF008695)],
+    };
+  }
+
+  Widget _buildContactNumberItem(
+    BuildContext context,
+    String number,
+    Property property,
+  ) {
     return InkWell(
       onTap: () async {
         if (!GuestChecker.check(context)) return;
@@ -143,22 +224,17 @@ class PropertyOwner extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: isHotelApartment
-                    ? const LinearGradient(
-                        colors: [Color(0xFFDFBA6B), Color(0xFF9E7D3B)],
-                        begin: Alignment.centerRight,
-                        end: Alignment.centerLeft,
-                      )
-                    : const LinearGradient(
-                        colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-                        begin: Alignment.centerRight,
-                        end: Alignment.centerLeft,
-                      ),
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).colorScheme.secondary,
+                  ],
+                  begin: Alignment.centerRight,
+                  end: Alignment.centerLeft,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: isHotelApartment
-                        ? const Color(0xFF9E7D3B).withOpacity(0.3)
-                        : const Color(0xFF008695).withOpacity(0.3),
+                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
                     blurRadius: 5,
                     offset: const Offset(0, 3),
                   ),
@@ -166,7 +242,9 @@ class PropertyOwner extends StatelessWidget {
               ),
               child: Icon(
                 Icons.phone_in_talk_rounded,
-                color: isHotelApartment ? Colors.black : Colors.white,
+                color: (property.isHotelApartment && property.tier == 'premium')
+                    ? Colors.black
+                    : Colors.white,
                 size: 18,
               ),
             ),

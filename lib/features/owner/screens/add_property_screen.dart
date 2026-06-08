@@ -194,7 +194,9 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
 
   Future<void> _submitProperty() async {
     // Validation
-    final phoneEmpty = RemoteConfigHelper.showPhoneField && _phoneController.text.trim().isEmpty;
+    final phoneEmpty =
+        RemoteConfigHelper.showPhoneField &&
+        _phoneController.text.trim().isEmpty;
     if (phoneEmpty ||
         _detailsController.text.trim().isEmpty ||
         _priceController.text.trim().isEmpty) {

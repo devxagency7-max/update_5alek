@@ -329,8 +329,10 @@ class _ProfileContentState extends State<ProfileContent> {
                           Icons.delete_forever_outlined,
                           isDestructive: true,
                           delay: 150,
-                          onTap: () =>
-                              _showDeleteAccountConfirmation(context, authProvider),
+                          onTap: () => _showDeleteAccountConfirmation(
+                            context,
+                            authProvider,
+                          ),
                         ),
 
                       // Privacy Contact Card
@@ -380,13 +382,13 @@ class _ProfileContentState extends State<ProfileContent> {
                                           ),
                                         ],
                                 ),
-                                 child: CircleAvatar(
-                                   radius: 60,
-                                   backgroundColor: Colors.transparent,
-                                   backgroundImage: CachedNetworkImageProvider(
-                                     RemoteConfigHelper.devXLogoUrl,
-                                   ),
-                                 ),
+                                child: CircleAvatar(
+                                  radius: 60,
+                                  backgroundColor: Colors.transparent,
+                                  backgroundImage: CachedNetworkImageProvider(
+                                    RemoteConfigHelper.devXLogoUrl,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
@@ -433,8 +435,7 @@ class _ProfileContentState extends State<ProfileContent> {
           GestureDetector(
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(
-                  builder: (_) => const PrivacyPolicyScreen()),
+              MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
             ),
             child: Row(
               children: [
@@ -955,7 +956,11 @@ class _ProfileContentState extends State<ProfileContent> {
                   color: Colors.red.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.delete_forever, size: 40, color: Colors.red),
+                child: const Icon(
+                  Icons.delete_forever,
+                  size: 40,
+                  color: Colors.red,
+                ),
               ),
               const SizedBox(height: 15),
               Text(

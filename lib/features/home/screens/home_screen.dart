@@ -72,9 +72,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             // Dynamic Content Body
-            Positioned.fill(
-              child: _buildBody(homeProvider.selectedIndex),
-            ),
+            Positioned.fill(child: _buildBody(homeProvider.selectedIndex)),
 
             // Gradient haze — layer 1: outermost, lightest
             Positioned(

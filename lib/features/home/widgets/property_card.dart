@@ -19,16 +19,20 @@ class PropertyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isFav = context.watch<FavoritesProvider>().isFavorite(property.id);
-
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // NOTE: OpenContainer must not rebuild while its open/close transition is
+    // running, otherwise the framework throws "'!_dirty': is not true".
+    // Scope the AuthProvider/FavoritesProvider listening to small Selectors
+    // (passed as `child`) so OpenContainer itself is built only once.
     return GestureDetector(
       onTap: () {
         if (!GuestChecker.check(context)) return;
       },
-      child: AbsorbPointer(
-        absorbing: context.watch<AuthProvider>().isGuest,
+      child: Selector<AuthProvider, bool>(
+        selector: (_, auth) => auth.isGuest,
+        builder: (context, isGuest, child) =>
+            AbsorbPointer(absorbing: isGuest, child: child),
         child: OpenContainer(
           transitionType: ContainerTransitionType.fade,
           transitionDuration: const Duration(milliseconds: 500),
@@ -42,8 +46,8 @@ class PropertyCard extends StatelessWidget {
             side: property.isHotelApartment
                 ? const BorderSide(color: Color(0xFFDFBA6B), width: 1.5)
                 : (isDark
-                    ? const BorderSide(color: Color(0xFF2A3038))
-                    : BorderSide.none),
+                      ? const BorderSide(color: Color(0xFF2A3038))
+                      : BorderSide.none),
           ),
           openBuilder: (context, _) =>
               PropertyDetailsScreen(property: property),
@@ -138,28 +142,32 @@ class PropertyCard extends StatelessWidget {
                           Positioned(
                             top: 8,
                             right: 8,
-                            child: GestureDetector(
-                              onTap: () {
-                                if (GuestChecker.check(context)) {
-                                  context
-                                      .read<FavoritesProvider>()
-                                      .toggleFavorite(property);
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? Colors.black.withOpacity(0.5)
-                                      : Colors.white,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  isFav
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
-                                  size: 18,
-                                  color: isFav ? Colors.red : Colors.grey,
+                            child: Selector<FavoritesProvider, bool>(
+                              selector: (_, favs) =>
+                                  favs.isFavorite(property.id),
+                              builder: (context, isFav, _) => GestureDetector(
+                                onTap: () {
+                                  if (GuestChecker.check(context)) {
+                                    context
+                                        .read<FavoritesProvider>()
+                                        .toggleFavorite(property);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? Colors.black.withOpacity(0.5)
+                                        : Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    isFav
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    size: 18,
+                                    color: isFav ? Colors.red : Colors.grey,
+                                  ),
                                 ),
                               ),
                             ),
@@ -232,7 +240,9 @@ class PropertyCard extends StatelessWidget {
                     style: GoogleFonts.cairo(
                       fontSize: 10,
                       color: property.isHotelApartment
-                          ? (isDark ? Colors.grey.shade400 : Colors.grey.shade600)
+                          ? (isDark
+                                ? Colors.grey.shade400
+                                : Colors.grey.shade600)
                           : Colors.grey,
                     ),
                   ),
@@ -243,8 +253,15 @@ class PropertyCard extends StatelessWidget {
                       ShaderMask(
                         shaderCallback: (bounds) => LinearGradient(
                           colors: property.isHotelApartment
-                              ? [const Color(0xFFF3E5AB), const Color(0xFFDFBA6B), const Color(0xFF9E7D3B)]
-                              : [const Color(0xFF39BB5E), const Color(0xFF008695)],
+                              ? [
+                                  const Color(0xFFF3E5AB),
+                                  const Color(0xFFDFBA6B),
+                                  const Color(0xFF9E7D3B),
+                                ]
+                              : [
+                                  const Color(0xFF39BB5E),
+                                  const Color(0xFF008695),
+                                ],
                           begin: Alignment.centerRight,
                           end: Alignment.centerLeft,
                         ).createShader(bounds),

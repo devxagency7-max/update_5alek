@@ -167,559 +167,575 @@ class _SignupScreenState extends State<SignupScreen> {
               top: -100,
               right: -100,
               child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isDark
-                    ? Colors.teal.withOpacity(0.1)
-                    : const Color(0xFFE0F2F1).withOpacity(0.8),
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark
+                      ? Colors.teal.withOpacity(0.1)
+                      : const Color(0xFFE0F2F1).withOpacity(0.8),
+                ),
               ),
             ),
-          ),
-          // Background: Light Green Semi-Circle Bottom-Left
-          Positioned(
-            bottom: -100,
-            left: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isDark
-                    ? Colors.teal.withOpacity(0.1)
-                    : const Color(0xFFE0F2F1).withOpacity(0.8),
+            // Background: Light Green Semi-Circle Bottom-Left
+            Positioned(
+              bottom: -100,
+              left: -100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark
+                      ? Colors.teal.withOpacity(0.1)
+                      : const Color(0xFFE0F2F1).withOpacity(0.8),
+                ),
               ),
             ),
-          ),
-          // Blur Effect
-          BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-            child: Container(color: Colors.transparent),
-          ),
+            // Blur Effect
+            BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+              child: Container(color: Colors.transparent),
+            ),
 
-          // Content
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24.0,
-                vertical: 20,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Header
-                  FadeInDown(
-                    duration: const Duration(seconds: 1),
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(15),
-                        child: Image.asset(
-                          'assets/images/logo.png',
-                          height: 120, // Adjusted size
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  FadeInDown(
-                    delay: const Duration(milliseconds: 200),
-                    child: ShaderMask(
-                      shaderCallback: (bounds) => const LinearGradient(
-                        colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-                        begin: Alignment.centerRight,
-                        end: Alignment.centerLeft,
-                      ).createShader(bounds),
-                      child: Text(
-                        context.loc.createNewAccount,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.cairo(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  FadeInDown(
-                    delay: const Duration(milliseconds: 300),
-                    child: Text(
-                      context.loc.signupSubtitle,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // Form
-                  FadeInUp(
-                    delay: const Duration(milliseconds: 400),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // User Type Toggle (Sliding Animation)
-                        Container(
-                          height: 55,
-                          padding: const EdgeInsets.all(4),
-                          margin: const EdgeInsets.only(bottom: 20),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? Colors.white.withOpacity(0.05)
-                                : Colors.grey[100],
-                            borderRadius: BorderRadius.circular(15),
-                            border: Border.all(
-                              color: isDark
-                                  ? Colors.white.withOpacity(0.1)
-                                  : Colors.grey.shade300,
-                            ),
+            // Content
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 20,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Header
+                    FadeInDown(
+                      duration: const Duration(seconds: 1),
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(15),
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            height: 120, // Adjusted size
                           ),
-                          child: Stack(
-                            children: [
-                              // 1. Sliding Background
-                              AnimatedAlign(
-                                duration: const Duration(milliseconds: 250),
-                                curve: Curves.easeInOut,
-                                alignment: _isOwner
-                                    ? AlignmentDirectional.centerEnd
-                                    : AlignmentDirectional.centerStart,
-                                child: Container(
-                                  width:
-                                      (MediaQuery.of(context).size.width - 56) /
-                                      2,
-                                  decoration: BoxDecoration(
-                                    color: isDark
-                                        ? Colors.white.withOpacity(0.1)
-                                        : Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.15),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                    ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    FadeInDown(
+                      delay: const Duration(milliseconds: 200),
+                      child: ShaderMask(
+                        shaderCallback: (bounds) => const LinearGradient(
+                          colors: [Color(0xFF39BB5E), Color(0xFF008695)],
+                          begin: Alignment.centerRight,
+                          end: Alignment.centerLeft,
+                        ).createShader(bounds),
+                        child: Text(
+                          context.loc.createNewAccount,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.cairo(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    FadeInDown(
+                      delay: const Duration(milliseconds: 300),
+                      child: Text(
+                        context.loc.signupSubtitle,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    // Form
+                    FadeInUp(
+                      delay: const Duration(milliseconds: 400),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // User Type Toggle (Sliding Animation)
+                          Container(
+                            height: 55,
+                            padding: const EdgeInsets.all(4),
+                            margin: const EdgeInsets.only(bottom: 20),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.05)
+                                  : Colors.grey[100],
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(
+                                color: isDark
+                                    ? Colors.white.withOpacity(0.1)
+                                    : Colors.grey.shade300,
+                              ),
+                            ),
+                            child: Stack(
+                              children: [
+                                // 1. Sliding Background
+                                AnimatedAlign(
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.easeInOut,
+                                  alignment: _isOwner
+                                      ? AlignmentDirectional.centerEnd
+                                      : AlignmentDirectional.centerStart,
+                                  child: Container(
+                                    width:
+                                        (MediaQuery.of(context).size.width -
+                                            56) /
+                                        2,
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? Colors.white.withOpacity(0.1)
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.15),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                              // 2. Buttons Row
-                              Row(
-                                children: [
-                                  // Seeker Option
-                                  Expanded(
-                                    child: GestureDetector(
-                                      onTap: () =>
-                                          setState(() => _isOwner = false),
-                                      behavior: HitTestBehavior.opaque,
-                                      child: Center(
-                                        child: AnimatedDefaultTextStyle(
-                                          duration: const Duration(
-                                            milliseconds: 200,
-                                          ),
-                                          style: GoogleFonts.cairo(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: !_isOwner ? 16 : 14,
-                                            color: !_isOwner
-                                                ? const Color(0xFF008695)
-                                                : (isDark
-                                                      ? Colors.grey[600]
-                                                      : Colors.grey),
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.person_search_outlined,
-                                                size: !_isOwner ? 22 : 18,
-                                                color: !_isOwner
-                                                    ? const Color(0xFF008695)
-                                                    : (isDark
-                                                          ? Colors.grey[600]
-                                                          : Colors.grey),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Flexible(
-                                                child: !_isOwner
-                                                    ? ShaderMask(
-                                                        shaderCallback: (bounds) =>
-                                                            const LinearGradient(
-                                                              colors: [
-                                                                Color(
-                                                                  0xFF39BB5E,
+                                // 2. Buttons Row
+                                Row(
+                                  children: [
+                                    // Seeker Option
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () =>
+                                            setState(() => _isOwner = false),
+                                        behavior: HitTestBehavior.opaque,
+                                        child: Center(
+                                          child: AnimatedDefaultTextStyle(
+                                            duration: const Duration(
+                                              milliseconds: 200,
+                                            ),
+                                            style: GoogleFonts.cairo(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: !_isOwner ? 16 : 14,
+                                              color: !_isOwner
+                                                  ? const Color(0xFF008695)
+                                                  : (isDark
+                                                        ? Colors.grey[600]
+                                                        : Colors.grey),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.person_search_outlined,
+                                                  size: !_isOwner ? 22 : 18,
+                                                  color: !_isOwner
+                                                      ? const Color(0xFF008695)
+                                                      : (isDark
+                                                            ? Colors.grey[600]
+                                                            : Colors.grey),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Flexible(
+                                                  child: !_isOwner
+                                                      ? ShaderMask(
+                                                          shaderCallback: (bounds) =>
+                                                              const LinearGradient(
+                                                                colors: [
+                                                                  Color(
+                                                                    0xFF39BB5E,
+                                                                  ),
+                                                                  Color(
+                                                                    0xFF008695,
+                                                                  ),
+                                                                ],
+                                                                begin: Alignment
+                                                                    .centerRight,
+                                                                end: Alignment
+                                                                    .centerLeft,
+                                                              ).createShader(
+                                                                bounds,
+                                                              ),
+                                                          child: Text(
+                                                            context
+                                                                .loc
+                                                                .seekerRole,
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style:
+                                                                const TextStyle(
+                                                                  color: Colors
+                                                                      .white,
                                                                 ),
-                                                                Color(
-                                                                  0xFF008695,
-                                                                ),
-                                                              ],
-                                                              begin: Alignment
-                                                                  .centerRight,
-                                                              end: Alignment
-                                                                  .centerLeft,
-                                                            ).createShader(
-                                                              bounds,
-                                                            ),
-                                                        child: Text(
+                                                          ),
+                                                        )
+                                                      : Text(
                                                           context
                                                               .loc
                                                               .seekerRole,
                                                           maxLines: 1,
                                                           overflow: TextOverflow
                                                               .ellipsis,
-                                                          style:
-                                                              const TextStyle(
-                                                                color: Colors
-                                                                    .white,
-                                                              ),
+                                                          style: TextStyle(
+                                                            color: isDark
+                                                                ? Colors
+                                                                      .grey[600]
+                                                                : Colors.grey,
+                                                          ),
                                                         ),
-                                                      )
-                                                    : Text(
-                                                        context.loc.seekerRole,
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        style: TextStyle(
-                                                          color: isDark
-                                                              ? Colors.grey[600]
-                                                              : Colors.grey,
-                                                        ),
-                                                      ),
-                                              ),
-                                            ],
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  // Owner Option
-                                  Expanded(
-                                    child: GestureDetector(
-                                      onTap: () =>
-                                          setState(() => _isOwner = true),
-                                      behavior: HitTestBehavior.opaque,
-                                      child: Center(
-                                        child: AnimatedDefaultTextStyle(
-                                          duration: const Duration(
-                                            milliseconds: 200,
-                                          ),
-                                          style: GoogleFonts.cairo(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: _isOwner ? 16 : 14,
-                                            color: _isOwner
-                                                ? const Color(0xFF39BB5E)
-                                                : (isDark
-                                                      ? Colors.grey[600]
-                                                      : Colors.grey),
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.apartment_rounded,
-                                                size: _isOwner ? 22 : 18,
-                                                color: _isOwner
-                                                    ? const Color(0xFF39BB5E)
-                                                    : (isDark
-                                                          ? Colors.grey[600]
-                                                          : Colors.grey),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Flexible(
-                                                child: _isOwner
-                                                    ? ShaderMask(
-                                                        shaderCallback: (bounds) =>
-                                                            const LinearGradient(
-                                                              colors: [
-                                                                Color(
-                                                                  0xFF39BB5E,
+                                    // Owner Option
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () =>
+                                            setState(() => _isOwner = true),
+                                        behavior: HitTestBehavior.opaque,
+                                        child: Center(
+                                          child: AnimatedDefaultTextStyle(
+                                            duration: const Duration(
+                                              milliseconds: 200,
+                                            ),
+                                            style: GoogleFonts.cairo(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: _isOwner ? 16 : 14,
+                                              color: _isOwner
+                                                  ? const Color(0xFF39BB5E)
+                                                  : (isDark
+                                                        ? Colors.grey[600]
+                                                        : Colors.grey),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.apartment_rounded,
+                                                  size: _isOwner ? 22 : 18,
+                                                  color: _isOwner
+                                                      ? const Color(0xFF39BB5E)
+                                                      : (isDark
+                                                            ? Colors.grey[600]
+                                                            : Colors.grey),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Flexible(
+                                                  child: _isOwner
+                                                      ? ShaderMask(
+                                                          shaderCallback: (bounds) =>
+                                                              const LinearGradient(
+                                                                colors: [
+                                                                  Color(
+                                                                    0xFF39BB5E,
+                                                                  ),
+                                                                  Color(
+                                                                    0xFF008695,
+                                                                  ),
+                                                                ],
+                                                                begin: Alignment
+                                                                    .centerRight,
+                                                                end: Alignment
+                                                                    .centerLeft,
+                                                              ).createShader(
+                                                                bounds,
+                                                              ),
+                                                          child: Text(
+                                                            context
+                                                                .loc
+                                                                .ownerRole,
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style:
+                                                                const TextStyle(
+                                                                  color: Colors
+                                                                      .white,
                                                                 ),
-                                                                Color(
-                                                                  0xFF008695,
-                                                                ),
-                                                              ],
-                                                              begin: Alignment
-                                                                  .centerRight,
-                                                              end: Alignment
-                                                                  .centerLeft,
-                                                            ).createShader(
-                                                              bounds,
-                                                            ),
-                                                        child: Text(
+                                                          ),
+                                                        )
+                                                      : Text(
                                                           context.loc.ownerRole,
                                                           maxLines: 1,
                                                           overflow: TextOverflow
                                                               .ellipsis,
-                                                          style:
-                                                              const TextStyle(
-                                                                color: Colors
-                                                                    .white,
-                                                              ),
+                                                          style: TextStyle(
+                                                            color: isDark
+                                                                ? Colors
+                                                                      .grey[600]
+                                                                : Colors.grey,
+                                                          ),
                                                         ),
-                                                      )
-                                                    : Text(
-                                                        context.loc.ownerRole,
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        style: TextStyle(
-                                                          color: isDark
-                                                              ? Colors.grey[600]
-                                                              : Colors.grey,
-                                                        ),
-                                                      ),
-                                              ),
-                                            ],
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        _buildLabel(context.loc.fullName, isDark),
-                        TextField(
-                          controller: _nameController,
-                          decoration: _inputDecoration(
-                            'أحمد محمد',
-                            Icons.person_outline,
-                            isDark,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
-                        _buildLabel(context.loc.email, isDark),
-                        TextField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: _inputDecoration(
-                            'example@domain.com',
-                            Icons.email_outlined,
-                            isDark,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
-                        _buildLabel(context.loc.password, isDark),
-                        TextField(
-                          controller: _passwordController,
-                          obscureText: !_isPasswordVisible,
-                          decoration: _inputDecoration(
-                            '........',
-                            Icons.lock_outline,
-                            isDark,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _isPasswordVisible
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () => setState(
-                                () => _isPasswordVisible = !_isPasswordVisible,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
-                        _buildLabel(context.loc.confirmPassword, isDark),
-                        TextField(
-                          controller: _confirmPasswordController,
-                          obscureText: !_isConfirmPasswordVisible,
-                          decoration: _inputDecoration(
-                            '........',
-                            Icons.verified_user_outlined,
-                            isDark,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _isConfirmPasswordVisible
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () => setState(
-                                () => _isConfirmPasswordVisible =
-                                    !_isConfirmPasswordVisible,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Terms
-                  FadeInUp(
-                    delay: const Duration(milliseconds: 500),
-                    child: Row(
-                      children: [
-                        Checkbox(
-                          value: _acceptedTerms,
-                          activeColor: Colors.teal,
-                          onChanged: (val) =>
-                              setState(() => _acceptedTerms = val!),
-                        ),
-                        Expanded(
-                          child: RichText(
-                            text: TextSpan(
-                              style: GoogleFonts.cairo(
-                                color: isDark
-                                    ? Colors.grey[400]
-                                    : Colors.grey[700],
-                                fontSize: 14,
-                              ),
-                              children: [
-                                TextSpan(text: context.loc.agreeTo),
-                                TextSpan(
-                                  text: context.loc.termsOfService,
-                                  style: const TextStyle(
-                                    color: Colors.teal,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  recognizer: TapGestureRecognizer()
-                                    ..onTap = () async {
-                                      final url = RemoteConfigHelper.lekOraebUrl;
-                                      if (await canLaunchUrl(Uri.parse(url))) {
-                                        await launchUrl(Uri.parse(url));
-                                      }
-                                    },
-                                ),
-                                TextSpan(text: context.loc.and),
-                                TextSpan(
-                                  text: context.loc.privacyPolicy,
-                                  style: const TextStyle(
-                                    color: Colors.teal,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  recognizer: TapGestureRecognizer()
-                                    ..onTap = () async {
-                                      final url = RemoteConfigHelper.lekOraebUrl;
-                                      if (await canLaunchUrl(Uri.parse(url))) {
-                                        await launchUrl(Uri.parse(url));
-                                      }
-                                    },
+                                  ],
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
 
-                  const SizedBox(height: 30),
+                          _buildLabel(context.loc.fullName, isDark),
+                          TextField(
+                            controller: _nameController,
+                            decoration: _inputDecoration(
+                              'أحمد محمد',
+                              Icons.person_outline,
+                              isDark,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
 
-                  // Button
-                  FadeInUp(
-                    delay: const Duration(milliseconds: 600),
-                    child: Container(
-                      width: double.infinity,
-                      height: 55,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF39BB5E), Color(0xFF008695)],
-                          begin: Alignment.centerRight,
-                          end: Alignment.centerLeft,
-                        ),
-                        borderRadius: BorderRadius.circular(15),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(
-                              0xFF008695,
-                            ).withValues(alpha: 0.3),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
+                          _buildLabel(context.loc.email, isDark),
+                          TextField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: _inputDecoration(
+                              'example@domain.com',
+                              Icons.email_outlined,
+                              isDark,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          _buildLabel(context.loc.password, isDark),
+                          TextField(
+                            controller: _passwordController,
+                            obscureText: !_isPasswordVisible,
+                            decoration: _inputDecoration(
+                              '........',
+                              Icons.lock_outline,
+                              isDark,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isPasswordVisible
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () => setState(
+                                  () =>
+                                      _isPasswordVisible = !_isPasswordVisible,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          _buildLabel(context.loc.confirmPassword, isDark),
+                          TextField(
+                            controller: _confirmPasswordController,
+                            obscureText: !_isConfirmPasswordVisible,
+                            decoration: _inputDecoration(
+                              '........',
+                              Icons.verified_user_outlined,
+                              isDark,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isConfirmPasswordVisible
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () => setState(
+                                  () => _isConfirmPasswordVisible =
+                                      !_isConfirmPasswordVisible,
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                      child: Selector<AuthProvider, bool>(
-                        selector: (context, auth) => auth.isLoading,
-                        builder: (context, isLoading, child) {
-                          return ElevatedButton(
-                            onPressed: isLoading ? null : _signUp,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                            ),
-                            child: isLoading
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white,
-                                  )
-                                : Text(
-                                    context.loc.signup,
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Terms
+                    FadeInUp(
+                      delay: const Duration(milliseconds: 500),
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: _acceptedTerms,
+                            activeColor: Colors.teal,
+                            onChanged: (val) =>
+                                setState(() => _acceptedTerms = val!),
+                          ),
+                          Expanded(
+                            child: RichText(
+                              text: TextSpan(
+                                style: GoogleFonts.cairo(
+                                  color: isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[700],
+                                  fontSize: 14,
+                                ),
+                                children: [
+                                  TextSpan(text: context.loc.agreeTo),
+                                  TextSpan(
+                                    text: context.loc.termsOfService,
                                     style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
+                                      color: Colors.teal,
                                       fontWeight: FontWeight.bold,
                                     ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () async {
+                                        final url =
+                                            RemoteConfigHelper.lekOraebUrl;
+                                        if (await canLaunchUrl(
+                                          Uri.parse(url),
+                                        )) {
+                                          await launchUrl(Uri.parse(url));
+                                        }
+                                      },
                                   ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // Google Sign In Button
-                  _buildGoogleButton(isDark),
-
-                  const SizedBox(height: 20),
-
-                  // Back to Login
-                  FadeInUp(
-                    delay: const Duration(milliseconds: 800),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          context.loc.alreadyHaveAccount,
-                          style: TextStyle(
-                            color: isDark ? Colors.grey[400] : Colors.black87,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context); // Go back to Login
-                          },
-                          child: Text(
-                            context.loc.login,
-                            style: const TextStyle(
-                              color: Colors.teal,
-                              fontWeight: FontWeight.bold,
+                                  TextSpan(text: context.loc.and),
+                                  TextSpan(
+                                    text: context.loc.privacyPolicy,
+                                    style: const TextStyle(
+                                      color: Colors.teal,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () async {
+                                        final url =
+                                            RemoteConfigHelper.lekOraebUrl;
+                                        if (await canLaunchUrl(
+                                          Uri.parse(url),
+                                        )) {
+                                          await launchUrl(Uri.parse(url));
+                                        }
+                                      },
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 30),
-                ],
+
+                    const SizedBox(height: 30),
+
+                    // Button
+                    FadeInUp(
+                      delay: const Duration(milliseconds: 600),
+                      child: Container(
+                        width: double.infinity,
+                        height: 55,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF39BB5E), Color(0xFF008695)],
+                            begin: Alignment.centerRight,
+                            end: Alignment.centerLeft,
+                          ),
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(
+                                0xFF008695,
+                              ).withValues(alpha: 0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Selector<AuthProvider, bool>(
+                          selector: (context, auth) => auth.isLoading,
+                          builder: (context, isLoading, child) {
+                            return ElevatedButton(
+                              onPressed: isLoading ? null : _signUp,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                              ),
+                              child: isLoading
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
+                                  : Text(
+                                      context.loc.signup,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    // Google Sign In Button
+                    _buildGoogleButton(isDark),
+
+                    const SizedBox(height: 20),
+
+                    // Back to Login
+                    FadeInUp(
+                      delay: const Duration(milliseconds: 800),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            context.loc.alreadyHaveAccount,
+                            style: TextStyle(
+                              color: isDark ? Colors.grey[400] : Colors.black87,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context); // Go back to Login
+                            },
+                            child: Text(
+                              context.loc.login,
+                              style: const TextStyle(
+                                color: Colors.teal,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildGoogleButton(bool isDark) {
     return FadeInUp(

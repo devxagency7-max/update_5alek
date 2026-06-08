@@ -124,208 +124,214 @@ class _ChatContentState extends State<ChatContent> {
           behavior: HitTestBehavior.opaque,
           child: Column(
             children: [
-            // Header
-            Container(
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 20,
-                left: 20,
-                right: 20,
-                bottom: 20,
-              ),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                boxShadow: Theme.of(context).brightness == Brightness.dark
-                    ? []
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-              ),
-              child: Row(
-                children: [
-                  Stack(
-                    children: [
-                      const CircleAvatar(
-                        radius: 22,
-                        backgroundColor: Color(0xFF008695),
-                        child: Icon(
-                          Icons.support_agent,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: Colors.green,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
+              // Header
+              Container(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top + 20,
+                  left: 20,
+                  right: 20,
+                  bottom: 20,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  boxShadow: Theme.of(context).brightness == Brightness.dark
+                      ? []
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                        ],
+                ),
+                child: Row(
+                  children: [
+                    Stack(
                       children: [
-                        Text(
-                          context.loc.techSupport,
-                          style: GoogleFonts.cairo(
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                        const CircleAvatar(
+                          radius: 22,
+                          backgroundColor: Color(0xFF008695),
+                          child: Icon(
+                            Icons.support_agent,
+                            color: Colors.white,
+                            size: 24,
                           ),
                         ),
-                        Text(
-                          context.loc.available247,
-                          style: GoogleFonts.cairo(
-                            color: Colors.grey,
-                            fontSize: 11,
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                  if (hasPinnedMessages) ...[
-                    IconButton(
-                      icon: const Icon(
-                        Icons.push_pin,
-                        color: Colors.orange,
-                        size: 20,
-                      ),
-                      onPressed: () => _scrollToNextPinnedMessage(messages),
-                      tooltip: context.loc.jumpToPinned,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
                     ),
                     const SizedBox(width: 15),
-                  ],
-                  IconButton(
-                    icon: const Icon(
-                      Icons.report_gmailerrorred_outlined,
-                      color: Colors.redAccent,
-                      size: 24,
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ReportScreen(),
-                        ),
-                      );
-                    },
-                    tooltip: context.loc.sendReport,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
-            ),
-            const BannerAdWidget(),
-
-            // Messages List
-            Expanded(
-              child: chatProvider.isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : (snapshot.hasError)
-                  ? Center(child: Text(context.loc.errorOccurred))
-                  : (messages.isEmpty)
-                  ? Center(
+                    Expanded(
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.chat_bubble_outline,
-                            size: 80,
-                            color: Colors.grey.withOpacity(0.3),
-                          ),
-                          const SizedBox(height: 10),
                           Text(
-                            context.loc.chatWelcome,
-                            textAlign: TextAlign.center,
+                            context.loc.techSupport,
+                            style: GoogleFonts.cairo(
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyLarge?.color,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            context.loc.available247,
                             style: GoogleFonts.cairo(
                               color: Colors.grey,
-                              fontSize: 16,
+                              fontSize: 11,
                             ),
                           ),
                         ],
                       ),
-                    )
-                  : ScrollablePositionedList.builder(
-                      itemScrollController: _itemScrollController,
-                      itemPositionsListener: _itemPositionsListener,
-                      padding: const EdgeInsets.only(
-                        top: 10,
-                        left: 15,
-                        right: 15,
-                        bottom: 20,
+                    ),
+                    if (hasPinnedMessages) ...[
+                      IconButton(
+                        icon: const Icon(
+                          Icons.push_pin,
+                          color: Colors.orange,
+                          size: 20,
+                        ),
+                        onPressed: () => _scrollToNextPinnedMessage(messages),
+                        tooltip: context.loc.jumpToPinned,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
                       ),
-                      reverse: true,
-                      itemCount: messages.length,
-                      itemBuilder: (context, index) {
-                        final msg = messages[index];
-                        final currentUserId = context
-                            .read<ChatProvider>()
-                            .currentUserId;
-                        final isMe = msg.senderId == currentUserId;
-
-                        // Check for date grouping
-                        bool showDate = false;
-                        if (index == messages.length - 1) {
-                          showDate = true;
-                        } else {
-                          final nextMsg = messages[index + 1];
-                          final currentDay = DateTime(
-                            msg.timestamp.year,
-                            msg.timestamp.month,
-                            msg.timestamp.day,
-                          );
-                          final nextDay = DateTime(
-                            nextMsg.timestamp.year,
-                            nextMsg.timestamp.month,
-                            nextMsg.timestamp.day,
-                          );
-                          if (currentDay != nextDay) {
-                            showDate = true;
-                          }
-                        }
-
-                        return Column(
-                          children: [
-                            if (showDate) _buildDateHeader(msg.timestamp),
-                            if (msg.type == MessageType.system)
-                              _buildSystemMessage(msg)
-                            else if (isMe)
-                              GestureDetector(
-                                onLongPress: () =>
-                                    _showMessageOptions(context, msg),
-                                child: _buildMessageBubble(context, msg, isMe),
-                              )
-                            else
-                              _buildMessageBubble(context, msg, isMe),
-                          ],
+                      const SizedBox(width: 15),
+                    ],
+                    IconButton(
+                      icon: const Icon(
+                        Icons.report_gmailerrorred_outlined,
+                        color: Colors.redAccent,
+                        size: 24,
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ReportScreen(),
+                          ),
                         );
                       },
+                      tooltip: context.loc.sendReport,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                     ),
-            ),
+                  ],
+                ),
+              ),
+              const BannerAdWidget(),
 
-            // Input Area
-            _buildInputArea(chatProvider.isLoading),
-          ],
-        ),
-      );
-    },
-  );
-}
+              // Messages List
+              Expanded(
+                child: chatProvider.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : (snapshot.hasError)
+                    ? Center(child: Text(context.loc.errorOccurred))
+                    : (messages.isEmpty)
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.chat_bubble_outline,
+                              size: 80,
+                              color: Colors.grey.withOpacity(0.3),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              context.loc.chatWelcome,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.cairo(
+                                color: Colors.grey,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ScrollablePositionedList.builder(
+                        itemScrollController: _itemScrollController,
+                        itemPositionsListener: _itemPositionsListener,
+                        padding: const EdgeInsets.only(
+                          top: 10,
+                          left: 15,
+                          right: 15,
+                          bottom: 20,
+                        ),
+                        reverse: true,
+                        itemCount: messages.length,
+                        itemBuilder: (context, index) {
+                          final msg = messages[index];
+                          final currentUserId = context
+                              .read<ChatProvider>()
+                              .currentUserId;
+                          final isMe = msg.senderId == currentUserId;
+
+                          // Check for date grouping
+                          bool showDate = false;
+                          if (index == messages.length - 1) {
+                            showDate = true;
+                          } else {
+                            final nextMsg = messages[index + 1];
+                            final currentDay = DateTime(
+                              msg.timestamp.year,
+                              msg.timestamp.month,
+                              msg.timestamp.day,
+                            );
+                            final nextDay = DateTime(
+                              nextMsg.timestamp.year,
+                              nextMsg.timestamp.month,
+                              nextMsg.timestamp.day,
+                            );
+                            if (currentDay != nextDay) {
+                              showDate = true;
+                            }
+                          }
+
+                          return Column(
+                            children: [
+                              if (showDate) _buildDateHeader(msg.timestamp),
+                              if (msg.type == MessageType.system)
+                                _buildSystemMessage(msg)
+                              else if (isMe)
+                                GestureDetector(
+                                  onLongPress: () =>
+                                      _showMessageOptions(context, msg),
+                                  child: _buildMessageBubble(
+                                    context,
+                                    msg,
+                                    isMe,
+                                  ),
+                                )
+                              else
+                                _buildMessageBubble(context, msg, isMe),
+                            ],
+                          );
+                        },
+                      ),
+              ),
+
+              // Input Area
+              _buildInputArea(chatProvider.isLoading),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildDateHeader(DateTime date) {
     return Container(

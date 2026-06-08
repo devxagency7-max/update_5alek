@@ -51,12 +51,14 @@ class AdsController {
         'support_phone': '01129455770',
         'show_phone_field': true,
         'show_ramadan_theme': false,
-        'dev_x_logo_url': 'https://pub-5fe3afd0e7d64de7af15bed6205d045e.r2.dev/devx.png',
+        'dev_x_logo_url':
+            'https://pub-5fe3afd0e7d64de7af15bed6205d045e.r2.dev/devx.png',
         'show_wallet_payment': true,
         'show_card_payment': true,
         'android_banner_ad_unit_id': 'ca-app-pub-2375099279419840/5691604828',
         'ios_banner_ad_unit_id': 'ca-app-pub-2375099279419840/5733680850',
-        'android_interstitial_ad_unit_id': 'ca-app-pub-2375099279419840/5514854314',
+        'android_interstitial_ad_unit_id':
+            'ca-app-pub-2375099279419840/5514854314',
         'ios_interstitial_ad_unit_id': 'ca-app-pub-2375099279419840/7909144406',
         'android_native_ad_unit_id': 'ca-app-pub-2375099279419840/1300277132',
         'ios_native_ad_unit_id': 'ca-app-pub-2375099279419840/4688192491',

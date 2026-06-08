@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:motareb/core/extensions/loc_extension.dart';
 import '../../../../core/models/property_model.dart';
-import '../../../../core/theme/app_theme.dart';
 
 class PropertyActions extends StatelessWidget {
   final Property property;
@@ -69,10 +68,10 @@ class PropertyActions extends StatelessWidget {
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: property.isHotelApartment
-                          ? const Color(0xFFDFBA6B)
+                          ? Theme.of(context).primaryColor
                           : (Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFFE6F4F4)
-                              : const Color(0xFF008695)),
+                                ? const Color(0xFFE6F4F4)
+                                : Theme.of(context).colorScheme.secondary),
                     ),
                   ),
                   if (property.discountPrice != null)
@@ -148,14 +147,18 @@ class PropertyActions extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: property.status == 'sold'
                           ? Colors.red.shade700
-                          : Colors.grey,
+                          : property.status == 'sold_out'
+                              ? const Color(0xFF6C1712)
+                              : Colors.grey,
                       borderRadius: BorderRadius.circular(25),
                     ),
                     child: Center(
                       child: Text(
                         property.status == 'sold'
                             ? context.loc.sold
-                            : context.loc.booked,
+                            : property.status == 'sold_out'
+                                ? 'نفذت الغرف المتاحة'
+                                : context.loc.booked,
                         style: GoogleFonts.cairo(
                           color: Colors.white,
                           fontSize: 16,
@@ -165,33 +168,34 @@ class PropertyActions extends StatelessWidget {
                     ),
                   )
                 else
-                  Container(
-                    height: 50,
-                    padding: const EdgeInsets.symmetric(horizontal: 30),
-                    decoration: BoxDecoration(
-                      gradient: property.isHotelApartment
-                          ? const LinearGradient(
-                              colors: [Color(0xFFDFBA6B), Color(0xFF9E7D3B)],
-                            )
-                          : AppTheme.primaryGradient,
-                      borderRadius: BorderRadius.circular(25),
-                      boxShadow: [
-                        BoxShadow(
-                          color: property.isHotelApartment
-                              ? const Color(0xFF9E7D3B).withOpacity(0.3)
-                              : const Color(0xFF008695).withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
+                  GestureDetector(
+                    onTap: onBook,
+                    child: Container(
+                      height: 50,
+                      padding: const EdgeInsets.symmetric(horizontal: 30),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(context).primaryColor,
+                            Theme.of(context).colorScheme.secondary,
+                          ],
                         ),
-                      ],
-                    ),
-                    child: GestureDetector(
-                      onTap: onBook,
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
                       child: Center(
                         child: Text(
                           context.loc.bookNow,
                           style: GoogleFonts.cairo(
-                            color: property.isHotelApartment ? Colors.black : Colors.white,
+                            color: (property.isHotelApartment && property.tier == 'premium')
+                                ? Colors.black
+                                : Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),

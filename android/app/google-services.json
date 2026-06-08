@@ -95,6 +95,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "562885198822-4clhq8hibht50umgtd4a1sjotba1smht.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.khaliyk.qarib",
+            "certificate_hash": "aed70cf13f6b8b886ebe7b8df80ef2d48e0a6663"
+          }
+        },
+        {
+          "client_id": "562885198822-9usiqskfvnjvaulqdl41o3n33rh4bml0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.khaliyk.qarib",
+            "certificate_hash": "304f0b60ed141ae8e62389ff6c368aa8e885b7a4"
+          }
+        },
+        {
           "client_id": "562885198822-ca4u8vfc26qr6eier904j67rl7t8sviv.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

@@ -5,6 +5,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:motareb/core/extensions/loc_extension.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:animate_do/animate_do.dart';
+import 'dart:async';
+import 'hotel_package_card.dart';
 
 import '../../../core/models/property_model.dart';
 
@@ -14,8 +18,12 @@ import '../providers/home_provider.dart';
 import 'large_property_card.dart';
 import 'property_card.dart';
 import 'add_property_card.dart';
+import '../../notifications/screens/notifications_screen.dart';
 import '../screens/university_properties_screen.dart';
+import '../screens/taj_house_screen.dart';
+import 'taj_house_card.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:motareb/core/services/ad_service.dart';
 import '../../../utils/guest_checker.dart';
 
@@ -28,17 +36,86 @@ class HomeContent extends StatefulWidget {
 
 class _HomeContentState extends State<HomeContent> {
   late final TextEditingController _searchController;
+  final Map<String, Map<String, dynamic>> _hotelPackagesData = {};
+  final Map<String, Property> _hotelRoomsData = {};
+  bool _loadingHotelData = true;
+  StreamSubscription? _hotelSubscription;
+  DateTime? _lastSeenAt;
+
+  static const _hotelDocIds = [
+    'taj_house_single_premium',
+    'taj_house_single_plus',
+    'taj_house_single_basic',
+    'taj_house_double_premium',
+    'taj_house_double_plus',
+    'taj_house_double_basic',
+  ];
 
   @override
   void initState() {
     super.initState();
     final initialQuery = context.read<HomeProvider>().searchQuery;
     _searchController = TextEditingController(text: initialQuery);
+    _loadHotelPackages();
+    _loadLastSeen();
+  }
+
+  Future<void> _loadLastSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ms = prefs.getInt('notifications_last_seen_ms');
+    if (mounted) {
+      setState(() {
+        _lastSeenAt = ms != null
+            ? DateTime.fromMillisecondsSinceEpoch(ms)
+            : DateTime.fromMillisecondsSinceEpoch(0);
+      });
+    }
+  }
+
+  Future<void> _markNotificationsAsSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now();
+    await prefs.setInt('notifications_last_seen_ms', now.millisecondsSinceEpoch);
+    if (mounted) setState(() => _lastSeenAt = now);
+  }
+
+  Future<void> _loadHotelPackages() async {
+    try {
+      final futures = _hotelDocIds.map(
+        (id) => FirebaseFirestore.instance
+            .collection('hotel_packages')
+            .doc(id)
+            .get(),
+      );
+      final docs = await Future.wait(futures);
+      for (final doc in docs) {
+        if (doc.exists) _hotelPackagesData[doc.id] = doc.data()!;
+      }
+
+      _hotelSubscription = FirebaseFirestore.instance
+          .collection('hotel_properties')
+          .snapshots()
+          .listen((snapshot) {
+        for (final doc in snapshot.docs) {
+          if (_hotelDocIds.contains(doc.id)) {
+            _hotelRoomsData[doc.id] = Property.fromMap(doc.data(), doc.id);
+          }
+        }
+        if (mounted) {
+          setState(() {
+            _loadingHotelData = false;
+          });
+        }
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loadingHotelData = false);
+    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _hotelSubscription?.cancel();
     super.dispose();
   }
 
@@ -68,15 +145,6 @@ class _HomeContentState extends State<HomeContent> {
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
-        if (_searchController.text.isEmpty) {
-          final provider = context.read<HomeProvider>();
-          if (provider.searchQuery.isNotEmpty ||
-              provider.selectedCategoryIndex != 0) {
-            provider.setSearchQuery('');
-            provider.setCategoryIndex(0);
-            provider.resetFilters();
-          }
-        }
       },
       behavior: HitTestBehavior.opaque,
       child: NotificationListener<ScrollNotification>(
@@ -109,8 +177,10 @@ class _HomeContentState extends State<HomeContent> {
                     _buildHeader(context, authProvider),
                     const SizedBox(height: 20),
                     _buildSearchBar(context),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     _buildCategories(context, categoriesList),
+                    const SizedBox(height: 16),
+                    _buildTajHouseCard(context),
                     const SizedBox(height: 5),
                   ]),
                 ),
@@ -218,8 +288,7 @@ class _HomeContentState extends State<HomeContent> {
 
     // 1. Hotel View
     if (selectedIndex == 1) {
-      final filtered = homeProvider.filteredByCategory;
-      return _buildFilteredListSlivers(context, filtered);
+      return _buildHotelListSlivers(context);
     }
 
     // 2. University View
@@ -390,26 +459,76 @@ class _HomeContentState extends State<HomeContent> {
             ),
           ],
         ),
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                // color: Theme.of(context).cardTheme.color,
-                // shape: BoxShape.circle,
-                // boxShadow: Theme.of(context).brightness == Brightness.dark
-                // ? []
-                // : [
-                // BoxShadow(
-                //   color: Colors.black12,
-                //   blurRadius: 10,
-                //   offset: const Offset(0, 5),
-                // ),
-                // ],
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('notifications')
+              .orderBy('createdAt', descending: true)
+              .limit(50)
+              .snapshots(),
+          builder: (context, snapshot) {
+            int unreadCount = 0;
+            if (snapshot.hasData && _lastSeenAt != null) {
+              for (final doc in snapshot.data!.docs) {
+                final data = doc.data() as Map<String, dynamic>;
+                final createdAt =
+                    (data['createdAt'] as Timestamp?)?.toDate();
+                if (createdAt != null && createdAt.isAfter(_lastSeenAt!)) {
+                  unreadCount++;
+                }
+              }
+            }
+            return GestureDetector(
+              onTap: () async {
+                await _markNotificationsAsSeen();
+                if (!context.mounted) return;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const NotificationsScreen(),
+                  ),
+                );
+              },
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Image.asset(
+                      'assets/images/bell.png',
+                      width: 30,
+                      height: 30,
+                    ),
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      top: 2,
+                      right: 2,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE53935),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            unreadCount > 99 ? '99+' : '$unreadCount',
+                            style: GoogleFonts.cairo(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-              child: const Text('🍃', style: TextStyle(fontSize: 24)),
-            ),
-          ],
+            );
+          },
         ),
       ],
     );
@@ -508,6 +627,26 @@ class _HomeContentState extends State<HomeContent> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTajHouseCard(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const TajHouseScreen(),
+          transitionsBuilder: (_, animation, __, child) => SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1.0, 0.0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+            child: child,
+          ),
+          transitionDuration: const Duration(milliseconds: 300),
+        ),
+      ),
+      child: const TajHouseCard(),
     );
   }
 
@@ -843,6 +982,67 @@ class _HomeContentState extends State<HomeContent> {
       ),
     ];
   }
+
+  List<Widget> _buildHotelListSlivers(BuildContext context) {
+    if (_loadingHotelData) {
+      return const [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ];
+    }
+
+    final List<({String id, HotelTier tier, String roomType, double fallbackPrice})> tiers = [
+      (id: 'taj_house_single_premium', tier: HotelTier.premium, roomType: 'Single', fallbackPrice: 3500.0),
+      (id: 'taj_house_single_plus',    tier: HotelTier.plus,    roomType: 'Single', fallbackPrice: 2500.0),
+      (id: 'taj_house_single_basic',   tier: HotelTier.basic,   roomType: 'Single', fallbackPrice: 1500.0),
+      (id: 'taj_house_double_premium', tier: HotelTier.premium, roomType: 'Double', fallbackPrice: 5000.0),
+      (id: 'taj_house_double_plus',    tier: HotelTier.plus,    roomType: 'Double', fallbackPrice: 3500.0),
+      (id: 'taj_house_double_basic',   tier: HotelTier.basic,   roomType: 'Double', fallbackPrice: 2500.0),
+    ];
+
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        sliver: SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final t = tiers[index];
+              final data = _hotelPackagesData[t.id];
+              final price = (data?['price'] as num?)?.toDouble() ?? t.fallbackPrice;
+              final rawFeatures = data?['features'] as List<dynamic>? ?? [];
+              final features = rawFeatures.isNotEmpty
+                  ? rawFeatures.map((e) => e.toString()).toList()
+                  : _fallbackFeatures(t.tier);
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: FadeInDown(
+                  duration: const Duration(milliseconds: 400),
+                  delay: Duration(milliseconds: index * 100),
+                  child: HotelPackageCard(
+                    tier: t.tier,
+                    roomType: t.roomType,
+                    price: price,
+                    features: features,
+                    property: _hotelRoomsData[t.id],
+                  ),
+                ),
+              );
+            },
+            childCount: tiers.length,
+          ),
+        ),
+      ),
+    ];
+  }
+
+  List<String> _fallbackFeatures(HotelTier tier) => switch (tier) {
+        HotelTier.premium => ['WiFi', 'تكييف', 'تلفزيون', 'ثلاجة', 'خدمة غرف', 'فطار يومي'],
+        HotelTier.plus    => ['WiFi', 'تكييف', 'تلفزيون', 'ثلاجة'],
+        HotelTier.basic   => ['WiFi', 'تكييف'],
+      };
 }
 
 class _HomeCategories extends StatefulWidget {

@@ -153,7 +153,9 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
 
     if (isSuccess) {
       if (!_isVerifying) {
-        debugPrint('Confirmed Redirect to Success URL: $url - Waiting for Firestore...');
+        debugPrint(
+          'Confirmed Redirect to Success URL: $url - Waiting for Firestore...',
+        );
         setState(() {
           _isVerifying = true; // Show "Verifying from server..." Overlay
         });
@@ -300,7 +302,9 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
                             ),
                             const SizedBox(height: 12),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 40),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 40,
+                              ),
                               child: Text(
                                 'نحن ننتظر الآن تأكيد البنك الرسمي لتحديث حالة حجزك في ثوانٍ.',
                                 textAlign: TextAlign.center,
@@ -327,7 +331,9 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
                             ),
                             const SizedBox(height: 12),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 40),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 40,
+                              ),
                               child: Text(
                                 'لا تقلق، أموالك بأمان. يمكنك العودة الآن وسيقوم النظام بتحديث حالة حجزك تلقائياً خلال دقائق بمجرد استلام التأكيد الرسمي.',
                                 textAlign: TextAlign.center,
