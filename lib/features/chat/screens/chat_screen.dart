@@ -48,6 +48,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    context.read<ChatProvider>().disposeChat();
     _chatController.dispose();
     super.dispose();
   }

@@ -314,9 +314,9 @@ class _PropertyDetailsContentState extends State<_PropertyDetailsContent> {
   }
 
   String _hotelTierLabel(String? tier) => switch (tier) {
-        'premium' => 'Premium',
-        'plus' => 'Plus',
-        'basic' => 'Basic',
+        'premium' => 'EXTRA VIP',
+        'plus' => 'VIP',
+        'basic' => 'BASIC',
         _ => '',
       };
 
@@ -346,24 +346,44 @@ class _PropertyDetailsContentState extends State<_PropertyDetailsContent> {
   Widget _buildHotelInfoSection(BuildContext context, Property property) {
     final chips = <Widget>[
       if ((property.tier ?? '').isNotEmpty)
-        _hotelInfoChip(context, 'الفئة', _hotelTierLabel(property.tier)),
+        _hotelInfoChip(
+          context,
+          context.isAr ? 'الفئة' : 'Category',
+          _hotelTierLabel(property.tier),
+        ),
       if ((property.roomType ?? '').isNotEmpty)
-        _hotelInfoChip(context, 'نوع الغرفة', property.roomType!),
+        _hotelInfoChip(
+          context,
+          context.isAr ? 'نوع الغرفة' : 'Room Type',
+          property.roomType?.toLowerCase() == 'single'
+              ? (context.isAr ? 'مفردة' : 'Single')
+              : property.roomType?.toLowerCase() == 'double'
+                  ? (context.isAr ? 'مزدوجة' : 'Double')
+                  : property.roomType!,
+        ),
       if (property.capacity != null && property.capacity! > 0)
-        _hotelInfoChip(context, 'السعة', '${property.capacity} أشخاص'),
+        _hotelInfoChip(
+          context,
+          context.isAr ? 'السعة' : 'Capacity',
+          context.isAr
+              ? '${property.capacity} أشخاص'
+              : '${property.capacity} ${property.capacity == 1 ? 'Person' : 'People'}',
+        ),
       if ((property.paymentMode ?? '').isNotEmpty)
         _hotelInfoChip(
           context,
-          'طريقة الدفع',
-          property.paymentMode == 'term' ? 'بالفصل الدراسي' : 'شهري',
+          context.isAr ? 'طريقة الدفع' : 'Payment Method',
+          property.paymentMode == 'term'
+              ? (context.isAr ? 'بالفصل الدراسي' : 'Per Term')
+              : (context.isAr ? 'شهري' : 'Monthly'),
         ),
       if (property.paymentMode == 'term' &&
           property.termPrice != null &&
           property.termPrice! > 0)
         _hotelInfoChip(
           context,
-          'سعر الفصل الدراسي',
-          '${property.termPrice!.toStringAsFixed(0)} ج',
+          context.isAr ? 'سعر الفصل الدراسي' : 'Term Price',
+          '${property.termPrice!.toStringAsFixed(0)} ${context.isAr ? 'ج' : 'EGP'}',
         ),
     ];
 
@@ -377,7 +397,7 @@ class _PropertyDetailsContentState extends State<_PropertyDetailsContent> {
             Icon(Icons.hotel_outlined, color: Theme.of(context).primaryColor, size: 22),
             const SizedBox(width: 10),
             Text(
-              'تفاصيل غرفة الفندق',
+              context.isAr ? 'تفاصيل غرفة الفندق' : 'Hotel Room Details',
               style: GoogleFonts.cairo(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,

@@ -23,7 +23,7 @@ class HotelPackageCard extends StatelessWidget {
   });
 
   String get _tierLabel => switch (tier) {
-        HotelTier.premium => 'EXTRE VIP',
+        HotelTier.premium => 'EXTRA VIP',
         HotelTier.plus => 'VIP',
         HotelTier.basic => 'BASIC',
       };

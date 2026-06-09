@@ -236,7 +236,49 @@ class Property {
                 ? (e['ar']?.toString() ?? '')
                 : (e['en']?.toString() ?? e['ar']?.toString() ?? '');
           }
-          return e.toString();
+          final str = e.toString();
+          if (!context.isAr) {
+            switch (str.trim().toLowerCase()) {
+              case 'wifi':
+              case 'واى فاى':
+              case 'واي فاي':
+                return 'WiFi';
+              case 'تكييف':
+              case 'تكييف مركزي':
+              case 'ac':
+                return 'AC';
+              case 'تلفزيون':
+              case 'تليفزيون':
+              case 'tv':
+                return 'TV';
+              case 'ثلاجة':
+              case 'ثلاجه':
+              case 'fridge':
+                return 'Fridge';
+              case 'خدمة غرف':
+              case 'خدمة الغرف':
+              case 'room service':
+                return 'Room Service';
+              case 'فطار يومي':
+              case 'الفطار اليومي':
+              case 'فطار':
+              case 'daily breakfast':
+              case 'breakfast':
+                return 'Daily Breakfast';
+              case 'مطبخ':
+              case 'kitchen':
+                return 'Kitchen';
+              case 'سكن طالبات':
+                return 'Girls Housing';
+              case 'سكن طلاب':
+                return 'Students Housing';
+              case 'مؤثثة':
+              case 'مفروشة':
+              case 'furnished':
+                return 'Furnished';
+            }
+          }
+          return str;
         })
         .where((s) => s.isNotEmpty)
         .toList();

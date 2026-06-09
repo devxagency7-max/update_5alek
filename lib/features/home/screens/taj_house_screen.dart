@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:animate_do/animate_do.dart';
+import '../../../core/extensions/loc_extension.dart';
 import '../../../core/models/property_model.dart';
 import '../widgets/taj_house_card.dart';
 import '../widgets/hotel_package_card.dart';
@@ -195,8 +196,11 @@ class _TajHouseScreenState extends State<TajHouseScreen>
         final price = (data?['price'] as num?)?.toDouble() ?? t.fallbackPrice;
         final rawFeatures = data?['features'] as List<dynamic>? ?? [];
         final features = rawFeatures.isNotEmpty
-            ? rawFeatures.map((e) => e.toString()).toList()
-            : _fallbackFeatures(t.tier);
+            ? rawFeatures
+                .map((e) => _localizeFeature(context, e))
+                .where((s) => s.isNotEmpty)
+                .toList()
+            : _fallbackFeatures(context, t.tier);
 
         return FadeInDown(
           duration: const Duration(milliseconds: 400),
@@ -214,9 +218,69 @@ class _TajHouseScreenState extends State<TajHouseScreen>
     );
   }
 
-  List<String> _fallbackFeatures(HotelTier tier) => switch (tier) {
-        HotelTier.premium => ['WiFi', 'تكييف', 'تلفزيون', 'ثلاجة', 'خدمة غرف', 'فطار يومي'],
-        HotelTier.plus    => ['WiFi', 'تكييف', 'تلفزيون', 'ثلاجة'],
-        HotelTier.basic   => ['WiFi', 'تكييف'],
-      };
+  String _localizeFeature(BuildContext context, dynamic e) {
+    if (e is Map) {
+      return context.isAr
+          ? (e['ar']?.toString() ?? '')
+          : (e['en']?.toString() ?? e['ar']?.toString() ?? '');
+    }
+    final str = e.toString();
+    if (!context.isAr) {
+      switch (str.trim().toLowerCase()) {
+        case 'wifi':
+        case 'واى فاى':
+        case 'واي فاي':
+          return 'WiFi';
+        case 'تكييف':
+        case 'تكييف مركزي':
+        case 'ac':
+          return 'AC';
+        case 'تلفزيون':
+        case 'تليفزيون':
+        case 'tv':
+          return 'TV';
+        case 'ثلاجة':
+        case 'ثلاجه':
+        case 'fridge':
+          return 'Fridge';
+        case 'خدمة غرف':
+        case 'خدمة الغرف':
+        case 'room service':
+          return 'Room Service';
+        case 'فطار يومي':
+        case 'الفطار اليومي':
+        case 'فطار':
+        case 'daily breakfast':
+        case 'breakfast':
+          return 'Daily Breakfast';
+        case 'مطبخ':
+        case 'kitchen':
+          return 'Kitchen';
+        case 'سكن طالبات':
+          return 'Girls Housing';
+        case 'سكن طلاب':
+          return 'Students Housing';
+        case 'مؤثثة':
+        case 'مفروشة':
+        case 'furnished':
+          return 'Furnished';
+      }
+    }
+    return str;
+  }
+
+  List<String> _fallbackFeatures(BuildContext context, HotelTier tier) {
+    final isAr = context.isAr;
+    return switch (tier) {
+      HotelTier.premium => isAr
+          ? ['WiFi', 'تكييف', 'تلفزيون', 'ثلاجة', 'خدمة غرف', 'فطار يومي']
+          : ['WiFi', 'AC', 'TV', 'Fridge', 'Room Service', 'Daily Breakfast'],
+      HotelTier.plus => isAr
+          ? ['WiFi', 'تكييف', 'تلفزيون', 'ثلاجة']
+          : ['WiFi', 'AC', 'TV', 'Fridge'],
+      HotelTier.basic => isAr
+          ? ['WiFi', 'تكييف']
+          : ['WiFi', 'AC'],
+    };
+  }
 }

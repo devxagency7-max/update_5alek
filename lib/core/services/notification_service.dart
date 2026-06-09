@@ -1,10 +1,13 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'package:motareb/core/models/property_model.dart';
+import 'package:motareb/features/home/providers/home_provider.dart';
 import 'package:motareb/features/home/screens/home_screen.dart';
 import 'package:motareb/features/property_details/screens/property_details_screen.dart';
 
@@ -27,6 +30,12 @@ class NotificationService {
     await _messaging.requestPermission(alert: true, badge: true, sound: true);
     await _messaging.subscribeToTopic(kAllUsersTopic);
 
+    // Save (and keep up to date) the FCM token on the user's profile so the
+    // backend can target this device directly (e.g. chat message notifications).
+    await _saveTokenForCurrentUser();
+    _messaging.onTokenRefresh.listen((_) => _saveTokenForCurrentUser());
+    FirebaseAuth.instance.authStateChanges().listen((_) => _saveTokenForCurrentUser());
+
     // Notification tapped while the app was in background.
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageTap);
 
@@ -38,6 +47,23 @@ class NotificationService {
 
     // Foreground messages: show a lightweight in-app banner.
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+  }
+
+  Future<void> _saveTokenForCurrentUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final token = await _messaging.getToken();
+      if (token == null) return;
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set(
+        {'fcmToken': token},
+        SetOptions(merge: true),
+      );
+    } catch (_) {
+      // Ignore token persistence errors; push will simply be skipped for this device.
+    }
   }
 
   void _handleForegroundMessage(RemoteMessage message) {
@@ -74,6 +100,9 @@ class NotificationService {
         if (propertyId == null || propertyId.isEmpty) return;
         await _openProperty(navigator, propertyId);
         break;
+      case 'chat':
+        _openChat(navigator);
+        break;
       case 'home':
       default:
         navigator.pushAndRemoveUntil(
@@ -81,6 +110,18 @@ class NotificationService {
           (route) => false,
         );
     }
+  }
+
+  void _openChat(NavigatorState navigator) {
+    final homeProvider = navigator.context.read<HomeProvider>();
+
+    navigator.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      (route) => false,
+    );
+
+    // Switch the home bottom-nav to the chat tab (index 2).
+    Future.microtask(() => homeProvider.setIndex(2));
   }
 
   Future<void> _openProperty(NavigatorState navigator, String propertyId) async {

@@ -111,7 +111,7 @@ class PropertyActions extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'الحجز غير متاح حالياً',
+                          context.isAr ? 'الحجز غير متاح حالياً' : 'Booking is currently unavailable',
                           style: GoogleFonts.cairo(
                             color: Colors.orange.shade800,
                             fontSize: 14,
@@ -157,7 +157,7 @@ class PropertyActions extends StatelessWidget {
                         property.status == 'sold'
                             ? context.loc.sold
                             : property.status == 'sold_out'
-                                ? 'نفذت الغرف المتاحة'
+                                ? (context.isAr ? 'نفذت الغرف المتاحة' : 'Available rooms sold out')
                                 : context.loc.booked,
                         style: GoogleFonts.cairo(
                           color: Colors.white,

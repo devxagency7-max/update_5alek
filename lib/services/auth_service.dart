@@ -30,7 +30,10 @@ class AuthService {
       await _googleSignIn.signOut();
 
       // ✅ v7: use authenticate() instead of signIn()
-      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
+      final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
+      if (googleUser == null) {
+        return null; // Gracefully handle cancellation
+      }
 
       // ✅ v7: Accessing authentication tokens is synchronous
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
@@ -54,8 +57,10 @@ class AuthService {
       if (user != null) {
         final userDoc = _firestore.collection('users').doc(user.uid);
         final doc = await userDoc.get();
+        final data = doc.data();
 
-        if (!doc.exists) {
+        // Check if doc doesn't exist, or it exists but name/email details are missing (e.g. from fcmToken race condition)
+        if (!doc.exists || data == null || data['name'] == null) {
           await userDoc.set({
             'uid': user.uid,
             'name': user.displayName ?? 'Google User',
@@ -63,10 +68,10 @@ class AuthService {
             'photoUrl': user.photoURL,
             'role': isOwner ? 'owner' : 'seeker',
             'provider': 'google',
-            'createdAt': FieldValue.serverTimestamp(),
+            'createdAt': data?['createdAt'] ?? FieldValue.serverTimestamp(),
             'lastLoginAt': FieldValue.serverTimestamp(),
-            'isBanned': false,
-          });
+            'isBanned': data?['isBanned'] ?? false,
+          }, SetOptions(merge: true));
         } else {
           await userDoc.update({
             'photoUrl': user.photoURL,
@@ -186,7 +191,7 @@ class AuthService {
           'createdAt': FieldValue.serverTimestamp(),
           'lastLoginAt': FieldValue.serverTimestamp(),
           'isBanned': false,
-        });
+        }, SetOptions(merge: true));
       }
 
       return userCredential;
@@ -294,16 +299,11 @@ class AuthService {
 
   Stream<User?> authStateChanges() => _auth.authStateChanges();
 
-  Future<Map<String, dynamic>?> getUserData() async {
-    final user = _auth.currentUser;
-    if (user == null) return null;
-
-    try {
-      final doc = await _firestore.collection('users').doc(user.uid).get();
-      return doc.data();
-    } catch (e) {
-      debugPrint("getUserData error: $e");
-      return null;
-    }
+  Stream<Map<String, dynamic>?> userDataStream(String uid) {
+    return _firestore
+        .collection('users')
+        .doc(uid)
+        .snapshots()
+        .map((doc) => doc.data());
   }
 }

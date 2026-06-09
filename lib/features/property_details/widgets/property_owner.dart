@@ -153,7 +153,7 @@ class PropertyOwner extends StatelessWidget {
               const Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 20),
               const SizedBox(width: 10),
               Text(
-                'تواصل معنا عبر الشات',
+                context.isAr ? 'تواصل معنا شات' : 'Contact us via Chat',
                 style: GoogleFonts.cairo(
                   color: (property.isHotelApartment && property.tier == 'premium')
                       ? Colors.black

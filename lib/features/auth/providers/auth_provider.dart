@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../services/auth_service.dart';
@@ -10,8 +12,11 @@ class AuthProvider extends ChangeNotifier {
     _authService.authStateChanges().listen((User? user) {
       _user = user;
       if (user != null) {
-        _fetchUserRolesAndData();
+        _subscribeToUserData(user.uid);
+        _fetchUserRoles();
       } else {
+        _userDataSubscription?.cancel();
+        _userDataSubscription = null;
         _user = null;
         _userData = null;
         _isAdmin = false;
@@ -27,6 +32,7 @@ class AuthProvider extends ChangeNotifier {
   bool _isOwner = false;
   bool _isLoading = false;
   String? _errorMessage;
+  StreamSubscription<Map<String, dynamic>?>? _userDataSubscription;
 
   User? get user => _user;
   Map<String, dynamic>? get userData => _userData;
@@ -45,7 +51,8 @@ class AuthProvider extends ChangeNotifier {
     try {
       _user = _authService.getCurrentUser();
       if (_user != null) {
-        await _fetchUserRolesAndData();
+        _subscribeToUserData(_user!.uid);
+        await _fetchUserRoles();
       }
     } catch (e) {
       _errorMessage = e.toString();
@@ -55,19 +62,30 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _fetchUserRolesAndData() async {
+  // Keeps `_userData` in sync with the Firestore user document in real time,
+  // so a freshly created document (e.g. on first Google sign-in) is picked up
+  // as soon as it's written instead of racing a one-shot read against it.
+  void _subscribeToUserData(String uid) {
+    _userDataSubscription?.cancel();
+    _userDataSubscription = _authService.userDataStream(uid).listen((data) {
+      _userData = data;
+      notifyListeners();
+    });
+  }
+
+  Future<void> _fetchUserRoles() async {
     try {
       _isAdmin = await _authService.isAdmin();
       _isOwner = await _authService.isOwner();
-      _userData = await _authService.getUserData();
     } catch (e) {
       debugPrint('Error fetching user roles: $e');
     }
   }
 
-  Future<void> refreshUserData() async {
-    await _fetchUserRolesAndData();
-    notifyListeners();
+  @override
+  void dispose() {
+    _userDataSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> signIn(String email, String password) async {
@@ -78,7 +96,6 @@ class AuthProvider extends ChangeNotifier {
     try {
       await _authService.signIn(email: email, password: password);
       _user = _authService.getCurrentUser();
-      await _fetchUserRolesAndData();
     } catch (e) {
       if (e is FirebaseAuthException) {
         _errorMessage = e.message;
@@ -103,7 +120,6 @@ class AuthProvider extends ChangeNotifier {
       );
       if (userCredential != null) {
         _user = _authService.getCurrentUser();
-        await _fetchUserRolesAndData();
       }
     } catch (e) {
       if (e is FirebaseAuthException) {
@@ -127,7 +143,6 @@ class AuthProvider extends ChangeNotifier {
       final userCredential = await _authService.signInAnonymously();
       if (userCredential != null) {
         _user = _authService.getCurrentUser();
-        await _fetchUserRolesAndData();
       }
     } catch (e) {
       if (e is FirebaseAuthException) {
@@ -160,7 +175,6 @@ class AuthProvider extends ChangeNotifier {
         isOwner: isOwner,
       );
       _user = _authService.getCurrentUser();
-      await _fetchUserRolesAndData();
     } catch (e) {
       if (e is FirebaseAuthException) {
         _errorMessage = e.message;

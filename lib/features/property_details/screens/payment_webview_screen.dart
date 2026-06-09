@@ -44,6 +44,11 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
   Timer? _verificationTimeoutTimer;
   bool _isTimeout = false;
 
+  // Success always takes priority over a failure notification that may
+  // arrive around the same time (or even slightly before it).
+  bool _bookingSucceeded = false;
+  bool _isFailureSheetShowing = false;
+
   @override
   void initState() {
     super.initState();
@@ -168,10 +173,17 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
   }
 
   void _onPaymentConfirmed() {
+    _bookingSucceeded = true;
     _paymentSubscription?.cancel();
     _bookingSubscription?.cancel();
     _verificationTimeoutTimer?.cancel();
     if (!mounted) return;
+
+    // A failure sheet may already be on screen from a near-simultaneous
+    // failure notification — success always wins, so dismiss it first.
+    if (_isFailureSheetShowing) {
+      Navigator.pop(context);
+    }
 
     // Close WebView and Navigate to Success Screen
     Navigator.pushReplacement(
@@ -186,6 +198,10 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
   }
 
   void _onPaymentFailed() {
+    // Success takes priority: ignore any failure notification that arrives
+    // once the booking has already been confirmed.
+    if (_bookingSucceeded) return;
+
     _paymentSubscription?.cancel();
     _bookingSubscription?.cancel();
     _verificationTimeoutTimer?.cancel();
@@ -195,6 +211,7 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
       _isTimeout = false;
     });
 
+    _isFailureSheetShowing = true;
     showModalBottomSheet(
       context: context,
       isDismissible: false,
@@ -213,7 +230,9 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
           Navigator.pop(context);
         },
       ),
-    );
+    ).whenComplete(() {
+      _isFailureSheetShowing = false;
+    });
   }
 
   @override
