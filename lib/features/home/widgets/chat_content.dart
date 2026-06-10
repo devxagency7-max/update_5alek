@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../chat/providers/chat_provider.dart';
 import '../../chat/models/message_model.dart';
@@ -34,16 +36,48 @@ class _ChatContentState extends State<ChatContent> {
 
   int _currentPinnedIndex = -1;
 
+  // Contact States
+  StreamSubscription? _contactSubscription;
+  List<Map<String, dynamic>> _contactNumbers = [];
+  bool _loadingContacts = true;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ChatProvider>().initUserChat();
     });
+    _fetchContactNumbers();
+  }
+
+  void _fetchContactNumbers() {
+    _contactSubscription = FirebaseFirestore.instance
+        .collection('contact_numbers')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .listen(
+          (snapshot) {
+            if (mounted) {
+              setState(() {
+                _contactNumbers = snapshot.docs.map((doc) => doc.data()).toList();
+                _loadingContacts = false;
+              });
+            }
+          },
+          onError: (e) {
+            debugPrint('Error fetching contacts in ChatContent: $e');
+            if (mounted) {
+              setState(() {
+                _loadingContacts = false;
+              });
+            }
+          },
+        );
   }
 
   @override
   void dispose() {
+    _contactSubscription?.cancel();
     context.read<ChatProvider>().disposeChat();
     _chatController.dispose();
     super.dispose();
@@ -139,7 +173,7 @@ class _ChatContentState extends State<ChatContent> {
                       ? []
                       : [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 5),
                           ),
@@ -230,6 +264,184 @@ class _ChatContentState extends State<ChatContent> {
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
+                    const SizedBox(width: 15),
+                    PopupMenuButton<String>(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      elevation: 6,
+                      tooltip: context.isAr ? 'اتصل بنا' : 'Contact Us',
+                      color: Theme.of(context).cardTheme.color,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        side: BorderSide(
+                          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      itemBuilder: (BuildContext context) {
+                        final items = <PopupMenuEntry<String>>[];
+
+                        // Header item
+                        items.add(
+                          PopupMenuItem<String>(
+                            enabled: false,
+                            height: 0,
+                            padding: EdgeInsets.zero,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.contact_phone_outlined,
+                                        color: Theme.of(context).colorScheme.secondary,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        context.isAr ? 'أرقام التواصل' : 'Contact Numbers',
+                                        style: GoogleFonts.cairo(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Divider(height: 1, thickness: 1),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+
+                        if (_loadingContacts) {
+                          items.add(
+                            PopupMenuItem<String>(
+                              enabled: false,
+                              child: Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        } else if (_contactNumbers.isEmpty) {
+                          items.add(
+                            PopupMenuItem<String>(
+                              enabled: false,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                child: Text(
+                                  context.isAr ? 'لا توجد أرقام متاحة' : 'No numbers available',
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        } else {
+                          items.addAll(
+                            _contactNumbers.map((data) {
+                              final number = data['number'] as String? ?? '';
+                              return PopupMenuItem<String>(
+                                value: number,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                child: Container(
+                                  width: 220,
+                                  margin: const EdgeInsets.symmetric(vertical: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).primaryColor.withValues(alpha: 0.05),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Theme.of(context).primaryColor.withValues(alpha: 0.15),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        number,
+                                        style: GoogleFonts.cairo(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).primaryColor.withValues(alpha: 0.12),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          Icons.phone_in_talk_rounded,
+                                          color: Theme.of(context).primaryColor,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        }
+
+                        return items;
+                      },
+                      onSelected: (String number) async {
+                        if (number.isEmpty) return;
+                        final Uri launchUri = Uri(scheme: 'tel', path: number);
+                        try {
+                          if (await canLaunchUrl(launchUri)) {
+                            await launchUrl(launchUri);
+                          } else {
+                            debugPrint('Could not launch $launchUri');
+                          }
+                        } catch (e) {
+                          debugPrint('Error launching dialer: $e');
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Theme.of(context).primaryColor,
+                              Theme.of(context).colorScheme.secondary,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.phone_in_talk_rounded,
+                          color: Colors.white,
+                          size: 26,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -249,7 +461,7 @@ class _ChatContentState extends State<ChatContent> {
                             Icon(
                               Icons.chat_bubble_outline,
                               size: 80,
-                              color: Colors.grey.withOpacity(0.3),
+                              color: Colors.grey.withValues(alpha: 0.3),
                             ),
                             const SizedBox(height: 10),
                             Text(
@@ -339,7 +551,7 @@ class _ChatContentState extends State<ChatContent> {
       margin: const EdgeInsets.symmetric(vertical: 15),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.2),
+        color: Colors.grey.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -361,7 +573,7 @@ class _ChatContentState extends State<ChatContent> {
         margin: const EdgeInsets.symmetric(vertical: 10),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.blueGrey.withOpacity(0.1),
+          color: Colors.blueGrey.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
@@ -402,7 +614,7 @@ class _ChatContentState extends State<ChatContent> {
                 ? []
                 : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 3,
                       offset: const Offset(0, 1),
                     ),
@@ -621,7 +833,7 @@ class _ChatContentState extends State<ChatContent> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF008695).withOpacity(0.4),
+                    color: const Color(0xFF008695).withValues(alpha: 0.4),
                     blurRadius: 6,
                     offset: const Offset(0, 3),
                   ),
